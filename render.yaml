@@ -1,0 +1,30 @@
+# render.yaml — Deploy at dashboard.render.com → New → Web Service → "Use render.yaml"
+# Push this file + the project to a GitHub repo, connect it on Render, done.
+
+services:
+  - type: web
+    name: dead-game-checker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+
+    envVars:
+      # Paste your webhook URL in the Render dashboard (marked sync:false = secret)
+      - key: DISCORD_WEBHOOK_URL
+        sync: false
+
+      # Auto-scan every 24h; set to 0 to disable and trigger manually from the UI
+      - key: SCAN_INTERVAL_HOURS
+        value: "24"
+
+      # SQLite lives on the persistent disk below
+      - key: DB_PATH
+        value: /data/games.db
+
+    # Persistent disk — keeps the SQLite file across deploys and restarts.
+    # Requires a paid Render plan (Starter $7/mo or higher).
+    # On the free tier, remove this block; the DB resets on each redeploy.
+    disk:
+      name: gamedata
+      mountPath: /data
+      sizeGB: 1

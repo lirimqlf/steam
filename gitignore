@@ -1,0 +1,15 @@
+# secrets
+_env
+.env
+
+# database
+*.db
+*.db-shm
+*.db-wal
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
