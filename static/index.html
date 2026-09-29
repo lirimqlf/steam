@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dead Game Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #08080f;
+      --surface:      #0f0f1a;
+      --surface2:     #14142080;
+      --border:       #1c1c2e;
+      --border2:      #252538;
+      --text:         #ddddf0;
+      --muted:        #60607a;
+      --dim:          #383850;
+      --green:        #00e676;
+      --green-bg:     rgba(0,230,118,.07);
+      --green-bd:     rgba(0,230,118,.22);
+      --red:          #ff4455;
+      --red-bg:       rgba(255,68,85,.07);
+      --red-bd:       rgba(255,68,85,.22);
+      --blue:         #5865f2;
+      --steam:        #5ba3d9;
+      --mono:         'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: -.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .skull { font-size: 15px; }
+
+    .ws-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .ws-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--dim);
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .ws-dot.on { background: var(--green); box-shadow: 0 0 5px var(--green); }
+
+    /* ── Stats ── */
+    .statsbar {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      overflow-x: auto;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 12px 20px 12px 0;
+      margin-right: 20px;
+    }
+
+    .stat + .stat { border-left: 1px solid var(--border); padding-left: 20px; }
+
+    .stat-v {
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .stat-v.r { color: var(--red); }
+    .stat-v.g { color: var(--green); }
+
+    .stat-k {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filters { display: flex; gap: 2px; }
+
+    .fbtn {
+      padding: 4px 11px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all .1s;
+    }
+    .fbtn:hover           { color: var(--text); border-color: var(--border2); }
+    .fbtn.active          { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+
+    .scan-btn {
+      padding: 5px 13px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+      letter-spacing: .1px;
+    }
+    .scan-btn.start { background: var(--blue); color: #fff; }
+    .scan-btn.start:hover { filter: brightness(1.1); }
+    .scan-btn.stop  { background: var(--red);  color: #fff; }
+    .scan-btn.stop:hover  { filter: brightness(1.1); }
+
+    .search-wrap { margin-left: auto; }
+    .search-wrap input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 11px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: inherit;
+      width: 200px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-wrap input:focus { border-color: var(--blue); }
+    .search-wrap input::placeholder { color: var(--dim); }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .progress-wrap.show { display: flex; }
+
+    .pbar {
+      width: 160px;
+      height: 3px;
+      background: var(--border2);
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .pbar-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 2px;
+      transition: width .35s;
+    }
+    .pbar-pct  { font-family: var(--mono); color: var(--muted); }
+    .pbar-game { color: var(--text); }
+    .pbar-dead { margin-left: auto; color: var(--red); font-family: var(--mono); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    col.c-game    { width: 34%; }
+    col.c-now     { width: 8%; }
+    col.c-owners  { width: 22%; }
+    col.c-status  { width: 10%; }
+    col.c-actions { width: 26%; }
+
+    thead th {
+      text-align: left;
+      padding: 8px 16px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      background: var(--surface);
+    }
+
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .08s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface); }
+
+    tbody td { padding: 10px 16px; vertical-align: middle; }
+
+    /* game cell */
+    .game-cell { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+    .game-icon {
+      width: 28px; height: 28px;
+      border-radius: 5px;
+      background: var(--surface2);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .game-info { min-width: 0; }
+
+    .game-name {
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .game-id {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 1px;
+    }
+
+    /* numbers */
+    .num {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--green);
+    }
+    .num.z { color: var(--red); }
+    .num.d { color: var(--muted); }
+
+    .own-text {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* status badge */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .badge.alive     { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
+    .badge.dead      { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-bd);   }
+    .badge.unchecked { background: transparent;       color: var(--muted); border: 1px solid var(--border2);  }
+
+    /* action row */
+    .act-row { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .abtn {
+      padding: 3px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all .12s;
+      white-space: nowrap;
+    }
+
+    .abtn-claim {
+      background: transparent;
+      border: 1px solid rgba(88,101,242,.4);
+      color: var(--blue);
+    }
+    .abtn-claim:hover { background: rgba(88,101,242,.1); }
+
+    .abtn-steam {
+      background: transparent;
+      border: 1px solid rgba(91,163,217,.35);
+      color: var(--steam);
+    }
+    .abtn-steam:hover { background: rgba(91,163,217,.1); }
+
+    .abtn-mark {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+    }
+    .abtn-mark:hover { border-color: var(--red-bd); color: var(--red); }
+
+    /* pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pg-btns { display: flex; gap: 4px; }
+
+    .pg-btn {
+      padding: 4px 11px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all .1s;
+    }
+    .pg-btn:hover:not(:disabled) { background: var(--surface2); }
+    .pg-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+    /* empty */
+    .mt { text-align: center; padding: 56px 20px; color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="logo">
+    <span class="skull">☠</span>
+    Dead Game Checker
+  </div>
+  <div class="ws-wrap">
+    <span class="ws-dot" id="wsDot"></span>
+    <span id="wsLabel">connecting</span>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="statsbar">
+  <div class="stat">
+    <span class="stat-v"   id="sTotal">—</span>
+    <span class="stat-k">Total</span>
+  </div>
+  <div class="stat">
+    <span class="stat-v r" id="sDead">—</span>
+    <span class="stat-k">Dead</span>
+  </div>
+  <div class="stat">
+    <span class="stat-v g" id="sAlive">—</span>
+    <span class="stat-k">Alive</span>
+  </div>
+  <div class="stat">
+    <span class="stat-v r" id="sNew">—</span>
+    <span class="stat-k">New dead 24h</span>
+  </div>
+  <div class="stat">
+    <span class="stat-v"   id="sLast" style="font-size:12px">—</span>
+    <span class="stat-k">Last scan</span>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="filters">
+    <button class="fbtn" data-f="dead"  onclick="setFilter('dead')">💀 Dead</button>
+    <button class="fbtn active" data-f="alive" onclick="setFilter('alive')">✅ Alive</button>
+    <button class="fbtn" data-f="all"   onclick="setFilter('all')">All</button>
+  </div>
+
+  <button class="scan-btn start" id="scanBtn" onclick="toggleScan()">▶ Start scan</button>
+
+  <div class="search-wrap">
+    <input id="searchInput" type="text" placeholder="Search game name…" oninput="onSearch(this.value)">
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="progress-wrap" id="progressWrap">
+  <div class="pbar"><div class="pbar-fill" id="pbarFill" style="width:0%"></div></div>
+  <span class="pbar-pct"  id="pbarPct">0%</span>
+  <span class="pbar-game" id="pbarGame"></span>
+  <span class="pbar-dead" id="pbarDead"></span>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <colgroup>
+      <col class="c-game">
+      <col class="c-now">
+      <col class="c-owners">
+      <col class="c-status">
+      <col class="c-actions">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Game</th>
+        <th>Now</th>
+        <th>Owners</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="5" class="mt">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<div class="pagination">
+  <span id="pgInfo">—</span>
+  <div class="pg-btns">
+    <button class="pg-btn" id="pgPrev" onclick="goPage(-1)" disabled>← Prev</button>
+    <button class="pg-btn" id="pgNext" onclick="goPage(+1)" disabled>Next →</button>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let filter = 'alive', page = 1, total = 0, search = '', scanning = false;
+const PER = 50;
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+let ws;
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen    = () => setWS(true);
+  ws.onclose   = () => { setWS(false); setTimeout(connectWS, 3000); };
+  ws.onmessage = ({ data }) => onMsg(JSON.parse(data));
+}
+
+function setWS(up) {
+  document.getElementById('wsDot').className    = 'ws-dot' + (up ? ' on' : '');
+  document.getElementById('wsLabel').textContent = up ? 'live' : 'reconnecting…';
+}
+
+function onMsg(d) {
+  const t = d.type;
+  if (t === 'scan_status' || t === 'scan_progress') {
+    updateProgress(d);
+  } else if (t === 'scan_started') {
+    scanning = true; refreshBtn();
+  } else if (t === 'scan_complete' || t === 'scan_error') {
+    scanning = false; refreshBtn();
+    document.getElementById('progressWrap').classList.remove('show');
+    loadStats(); loadGames();
+  } else if (t === 'game_updated') {
+    loadGames();
+  }
+}
+
+function updateProgress(d) {
+  scanning = d.is_running;
+  refreshBtn();
+  const wrap = document.getElementById('progressWrap');
+  if (d.is_running) {
+    wrap.classList.add('show');
+    document.getElementById('pbarFill').style.width    = `${d.pct || 0}%`;
+    document.getElementById('pbarPct').textContent     = `${d.pct || 0}%`;
+    document.getElementById('pbarGame').textContent    = d.current_game || '';
+    document.getElementById('pbarDead').textContent    = d.dead_count ? `${d.dead_count} dead` : '';
+  } else {
+    wrap.classList.remove('show');
+  }
+}
+
+function refreshBtn() {
+  const btn = document.getElementById('scanBtn');
+  btn.textContent = scanning ? '⏹ Stop scan' : '▶ Start scan';
+  btn.className   = 'scan-btn ' + (scanning ? 'stop' : 'start');
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const s = await fetch('/api/stats').then(r => r.json());
+  document.getElementById('sTotal').textContent = fmt(s.total);
+  document.getElementById('sDead').textContent  = fmt(s.dead);
+  document.getElementById('sAlive').textContent = fmt(s.alive);
+  document.getElementById('sNew').textContent   = fmt(s.new_dead_24h);
+  if (s.last_scan) {
+    const t = new Date(s.last_scan.started_at.endsWith('Z')
+      ? s.last_scan.started_at
+      : s.last_scan.started_at + 'Z');
+    document.getElementById('sLast').textContent =
+      t.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' +
+      t.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
+  }
+}
+
+async function loadGames() {
+  const q = new URLSearchParams({ page, per_page: PER, sort: 'current' });
+  if (filter !== 'all') q.set('status', filter);
+  if (search) q.set('search', search);
+  const { games, total: t } = await fetch(`/api/games?${q}`).then(r => r.json());
+  total = t;
+  renderTable(games);
+  renderPager(t);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderTable(games) {
+  const tbody = document.getElementById('tbody');
+  if (!games.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="mt">No games found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = games.map(g => {
+    const iconSrc = g.icon
+      ? `https://cdn.discordapp.com/app-icons/${g.discord_id}/${g.icon}.png`
+      : null;
+    const iconEl  = `<img class="game-icon" src="${iconSrc || ''}" alt=""
+      ${iconSrc ? `onerror="this.src=''; this.style.opacity='.15'"` : `style="opacity:.15"`}>`;
+
+    const nowCls = g.current_players === 0 ? 'z' : g.current_players === null ? 'd' : '';
+    const nowTxt = g.current_players !== null ? numK(g.current_players) : '—';
+
+    const devUrl   = `https://discord.com/developers/applications/${g.discord_id}`;
+    const steamUrl = g.steam_appid ? `https://store.steampowered.com/app/${g.steam_appid}` : null;
+
+    const markBtn = g.status !== 'dead'
+      ? `<button class="abtn abtn-mark" onclick="markDead('${g.discord_id}')">Mark dead</button>`
+      : '';
+
+    return `<tr>
+      <td>
+        <div class="game-cell">
+          ${iconEl}
+          <div class="game-info">
+            <div class="game-name">${esc(g.name)}</div>
+            <div class="game-id">${g.discord_id}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="num ${nowCls}">${nowTxt}</span></td>
+      <td>${g.owners ? `<span class="own-text">${fmtOwners(g.owners)}</span>` : `<span class="num d">—</span>`}</td>
+      <td><span class="badge ${g.status}">${g.status}</span></td>
+      <td>
+        <div class="act-row">
+          <a class="abtn abtn-claim" href="${devUrl}" target="_blank" rel="noopener">Claim ↗</a>
+          ${steamUrl ? `<a class="abtn abtn-steam" href="${steamUrl}" target="_blank" rel="noopener">Steam ↗</a>` : ''}
+          ${markBtn}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPager(t) {
+  const pages = Math.ceil(t / PER);
+  const from  = t ? (page - 1) * PER + 1 : 0;
+  const to    = Math.min(page * PER, t);
+  document.getElementById('pgInfo').textContent =
+    t ? `${from}–${to} of ${fmt(t)}` : '0 results';
+  document.getElementById('pgPrev').disabled = page <= 1;
+  document.getElementById('pgNext').disabled = page >= pages;
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function setFilter(f) {
+  filter = f; page = 1;
+  document.querySelectorAll('.fbtn').forEach(b =>
+    b.classList.toggle('active', b.dataset.f === f)
+  );
+  loadGames();
+}
+
+let st;
+function onSearch(v) {
+  clearTimeout(st);
+  st = setTimeout(() => { search = v.trim(); page = 1; loadGames(); }, 280);
+}
+
+function goPage(d) { page += d; loadGames(); scrollTo(0, 0); }
+
+async function toggleScan() {
+  await fetch(scanning ? '/api/scan/stop' : '/api/scan/start', { method: 'POST' });
+}
+
+async function markDead(id) {
+  await fetch(`/api/games/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'dead' }),
+  });
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+const fmt  = n  => (n ?? 0).toLocaleString();
+const numK = n  => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+const esc  = s  => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function fmtOwners(s) {
+  return s.replace(/\d+/g, n => {
+    const v = +n;
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(0) + 'M';
+    if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K';
+    return n;
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+connectWS();
+loadStats();
+loadGames();
+setInterval(loadStats, 30_000);
+</script>
+</body>
+</html>
