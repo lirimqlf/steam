@@ -16,7 +16,9 @@ STEAMSPY_DELAY          = 1.1
 
 DISCORD_DETECTABLE_URL  = "https://discord.com/api/v10/applications/detectable"
 STEAM_PLAYER_COUNT_URL  = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/"
+STEAM_APPDETAILS_URL    = "https://store.steampowered.com/api/appdetails"
 STEAMSPY_URL            = "https://steamspy.com/api.php"
+CONCURRENCY_DETAILS     = 5
 
 
 class Scanner:
@@ -78,6 +80,24 @@ class Scanner:
         except Exception:
             return None
 
+    async def _fetch_steam_apptype(self, session: aiohttp.ClientSession, appid: str) -> Optional[str]:
+        """Returns 'game', 'dlc', 'demo', 'music', etc. or None on failure."""
+        try:
+            async with session.get(
+                STEAM_APPDETAILS_URL,
+                params={"appids": appid, "filters": "basic"},
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as r:
+                if r.status != 200:
+                    return None
+                data = await r.json(content_type=None)
+                app = data.get(str(appid), {})
+                if not app.get("success"):
+                    return None
+                return app.get("data", {}).get("type")
+        except Exception:
+            return None
+
     async def _fetch_steamspy(self, session: aiohttp.ClientSession, appid: str) -> dict:
         try:
             async with session.get(STEAMSPY_URL, params={"request": "appdetails", "appid": appid}, timeout=aiohttp.ClientTimeout(total=15)) as r:
@@ -106,6 +126,14 @@ class Scanner:
 
         name       = game_raw.get("name", "Unknown")
         discord_id = game_raw.get("id", "")
+
+        # Skip DLCs, demos, music packs, etc. — only keep type "game"
+        async with steam_sem:
+            app_type = await self._fetch_steam_apptype(session, appid)
+        if app_type is not None and app_type != "game":
+            self.progress += 1
+            await self._broadcast_progress()
+            return
 
         # Fetch in parallel
         async with steam_sem:
