@@ -1,653 +1,291 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dead Game Checker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg:           #08080f;
-      --surface:      #0f0f1a;
-      --surface2:     #14142080;
-      --border:       #1c1c2e;
-      --border2:      #252538;
-      --text:         #ddddf0;
-      --muted:        #60607a;
-      --dim:          #383850;
-      --green:        #00e676;
-      --green-bg:     rgba(0,230,118,.07);
-      --green-bd:     rgba(0,230,118,.22);
-      --red:          #ff4455;
-      --red-bg:       rgba(255,68,85,.07);
-      --red-bd:       rgba(255,68,85,.22);
-      --blue:         #5865f2;
-      --steam:        #5ba3d9;
-      --mono:         'JetBrains Mono', monospace;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    /* ── Topbar ── */
-    .topbar {
-      height: 50px;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      border-bottom: 1px solid var(--border);
-      gap: 16px;
-    }
-
-    .logo {
-      font-weight: 600;
-      font-size: 13px;
-      letter-spacing: -.2px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .skull { font-size: 15px; }
-
-    .ws-wrap {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .ws-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--dim);
-      flex-shrink: 0;
-      transition: background .3s;
-    }
-    .ws-dot.on { background: var(--green); box-shadow: 0 0 5px var(--green); }
-
-    /* ── Stats ── */
-    .statsbar {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      padding: 0 20px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      overflow-x: auto;
-    }
-
-    .stat {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      padding: 12px 20px 12px 0;
-      margin-right: 20px;
-    }
-
-    .stat + .stat { border-left: 1px solid var(--border); padding-left: 20px; }
-
-    .stat-v {
-      font-family: var(--mono);
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--text);
-      white-space: nowrap;
-    }
-    .stat-v.r { color: var(--red); }
-    .stat-v.g { color: var(--green); }
-
-    .stat-k {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: .6px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    /* ── Controls ── */
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .filters { display: flex; gap: 2px; }
-
-    .fbtn {
-      padding: 4px 11px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      font-size: 11px;
-      font-family: inherit;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: all .1s;
-    }
-    .fbtn:hover           { color: var(--text); border-color: var(--border2); }
-    .fbtn.active          { background: var(--surface2); color: var(--text); border-color: var(--border2); }
-
-    .scan-btn {
-      padding: 5px 13px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      border: none;
-      transition: all .15s;
-      letter-spacing: .1px;
-    }
-    .scan-btn.start { background: var(--blue); color: #fff; }
-    .scan-btn.start:hover { filter: brightness(1.1); }
-    .scan-btn.stop  { background: var(--red);  color: #fff; }
-    .scan-btn.stop:hover  { filter: brightness(1.1); }
-
-    .search-wrap { margin-left: auto; }
-    .search-wrap input {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 5px 11px;
-      border-radius: 3px;
-      font-size: 12px;
-      font-family: inherit;
-      width: 200px;
-      outline: none;
-      transition: border-color .15s;
-    }
-    .search-wrap input:focus { border-color: var(--blue); }
-    .search-wrap input::placeholder { color: var(--dim); }
-
-    /* ── Progress ── */
-    .progress-wrap {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-    }
-    .progress-wrap.show { display: flex; }
-
-    .pbar {
-      width: 160px;
-      height: 3px;
-      background: var(--border2);
-      border-radius: 2px;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .pbar-fill {
-      height: 100%;
-      background: var(--blue);
-      border-radius: 2px;
-      transition: width .35s;
-    }
-    .pbar-pct  { font-family: var(--mono); color: var(--muted); }
-    .pbar-game { color: var(--text); }
-    .pbar-dead { margin-left: auto; color: var(--red); font-family: var(--mono); }
-
-    /* ── Table ── */
-    .table-wrap { overflow-x: auto; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-
-    col.c-game    { width: 34%; }
-    col.c-now     { width: 8%; }
-    col.c-owners  { width: 22%; }
-    col.c-status  { width: 10%; }
-    col.c-actions { width: 26%; }
-
-    thead th {
-      text-align: left;
-      padding: 8px 16px;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: .7px;
-      color: var(--muted);
-      font-weight: 600;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-      background: var(--surface);
-    }
-
-    tbody tr { border-bottom: 1px solid var(--border); transition: background .08s; }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: var(--surface); }
-
-    tbody td { padding: 10px 16px; vertical-align: middle; }
-
-    /* game cell */
-    .game-cell { display: flex; align-items: center; gap: 9px; min-width: 0; }
-
-    .game-icon {
-      width: 28px; height: 28px;
-      border-radius: 5px;
-      background: var(--surface2);
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .game-info { min-width: 0; }
-
-    .game-name {
-      font-weight: 500;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .game-id {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--dim);
-      margin-top: 1px;
-    }
-
-    /* numbers */
-    .num {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--green);
-    }
-    .num.z { color: var(--red); }
-    .num.d { color: var(--muted); }
-
-    .own-text {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* status badge */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 3px;
-      font-family: var(--mono);
-      font-size: 10px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: .3px;
-    }
-    .badge.alive     { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
-    .badge.dead      { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-bd);   }
-    .badge.unchecked { background: transparent;       color: var(--muted); border: 1px solid var(--border2);  }
-
-    /* action row */
-    .act-row { display: flex; gap: 5px; flex-wrap: wrap; }
-
-    .abtn {
-      padding: 3px 10px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-family: inherit;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      transition: all .12s;
-      white-space: nowrap;
-    }
-
-    .abtn-claim {
-      background: transparent;
-      border: 1px solid rgba(88,101,242,.4);
-      color: var(--blue);
-    }
-    .abtn-claim:hover { background: rgba(88,101,242,.1); }
-
-    .abtn-steam {
-      background: transparent;
-      border: 1px solid rgba(91,163,217,.35);
-      color: var(--steam);
-    }
-    .abtn-steam:hover { background: rgba(91,163,217,.1); }
-
-    .abtn-mark {
-      background: transparent;
-      border: 1px solid var(--border2);
-      color: var(--muted);
-    }
-    .abtn-mark:hover { border-color: var(--red-bd); color: var(--red); }
-
-    /* pagination */
-    .pagination {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 20px;
-      border-top: 1px solid var(--border);
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .pg-btns { display: flex; gap: 4px; }
-
-    .pg-btn {
-      padding: 4px 11px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text);
-      font-size: 11px;
-      font-family: inherit;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: all .1s;
-    }
-    .pg-btn:hover:not(:disabled) { background: var(--surface2); }
-    .pg-btn:disabled { opacity: .3; cursor: not-allowed; }
-
-    /* empty */
-    .mt { text-align: center; padding: 56px 20px; color: var(--muted); font-size: 12px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SideQuest · Dead game scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080D1C;--panel:#0F1730;--raise:#16213F;--line:rgba(160,185,255,.10);--text:#F2F6FF;--mut:#8D9AB9;--blue:#2F6BFF;--blue2:#6C97FF;--amber:#F2B84B;--r:12px;--ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-feature-settings:"tnum","cv11";-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+/* header */
+header{position:sticky;top:0;z-index:20;background:rgba(8,13,28,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.hd{display:flex;align-items:center;gap:14px;height:64px}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.brand b{font-size:15px;font-weight:650;letter-spacing:-.01em;display:block;line-height:1.15}
+.brand span{color:var(--mut);font-size:12.5px}
+.pill{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12.5px;padding:0 6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--mut);transition:background .3s,box-shadow .3s}
+.dot.on{background:#7FB0FF;box-shadow:0 0 0 4px rgba(108,151,255,.16)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:550;transition:background .2s,transform .15s var(--ease),box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.btn.ghost{color:var(--text);background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.ghost:hover{background:var(--raise)}
+.btn.pri{background:var(--blue);color:#fff;box-shadow:0 6px 18px -6px rgba(47,107,255,.7)}
+.btn.pri:hover{background:#4378FF}
+.btn.stop{background:#fff;color:#0A1330}
+#bar{height:2px;background:transparent;position:relative;overflow:hidden}
+#bar i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));transition:width .5s var(--ease)}
+#bar.run i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);animation:sweep 1.3s linear infinite}
+@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);margin:28px 0 8px}
+.stat{padding:2px 28px;border-left:1px solid var(--line)}
+.stat:first-child{padding-left:0;border:0}
+.stat strong{display:block;font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.stat.hero strong{color:var(--blue2)}
+.stat span{color:var(--mut);font-size:13px}
+.scan{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
+.scan.on{grid-template-rows:1fr}
+.scan>div{overflow:hidden}
+.scan p{margin:12px 0 0;color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scan p b{color:var(--text);font-weight:550}
+/* toolbar */
+.tb{display:flex;align-items:center;gap:14px;margin:26px 0 14px;flex-wrap:wrap}
+.seg{position:relative;display:flex;padding:3px;background:var(--panel);border-radius:11px;box-shadow:inset 0 0 0 1px var(--line)}
+.seg button{position:relative;z-index:1;padding:6px 16px;border-radius:8px;color:var(--mut);font-weight:550;transition:color .25s}
+.seg button.on{color:#fff}
+.thumb{position:absolute;top:3px;bottom:3px;left:0;border-radius:8px;background:var(--blue);transition:transform .4s var(--ease),width .4s var(--ease)}
+.search{position:relative;flex:1;min-width:200px;max-width:340px}
+.search .ic{position:absolute;left:12px;top:9px;color:var(--mut)}
+.search input{width:100%;height:36px;padding:0 12px 0 38px;border-radius:10px;border:0;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);outline:0;transition:box-shadow .2s}
+.search input:focus{box-shadow:inset 0 0 0 1.5px var(--blue2)}
+.sw{display:inline-flex;align-items:center;gap:10px;color:var(--mut);cursor:pointer;user-select:none}
+.sw input{display:none}
+.sw i{width:34px;height:20px;border-radius:20px;background:var(--raise);position:relative;transition:background .25s;flex:none}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .3s var(--ease)}
+.sw input:checked+i{background:var(--blue)}
+.sw input:checked+i::after{transform:translateX(14px)}
+.sw input:checked~em{color:var(--text)}
+.sw em{font-style:normal}
+#count{margin-left:auto;color:var(--mut);font-size:13px}
+/* table */
+.tbl{background:var(--panel);border-radius:16px;box-shadow:inset 0 0 0 1px var(--line);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:880px}
+th{text-align:left;font-weight:500;color:var(--mut);font-size:12.5px;padding:14px 16px;border-bottom:1px solid var(--line)}
+td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border:0}
+tbody tr{transition:background .2s}
+tbody tr:hover{background:rgba(108,151,255,.05)}
+.num{text-align:right}th.num{text-align:right}
+.game{display:flex;align-items:center;gap:12px;min-width:0}
+.gi{width:36px;height:36px;border-radius:9px;background:var(--raise);object-fit:cover;flex:none;display:grid;place-items:center;color:var(--mut);font-weight:600}
+.gn{font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.gs{color:var(--mut);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.zero{color:var(--mut)}
+.ring{width:38px;height:38px;display:block}
+.ring circle{fill:none;stroke-width:3.2;stroke-linecap:round}
+.ring .rt{stroke:var(--raise)}
+.ring .rv{transition:stroke-dashoffset 1s var(--ease) .1s}
+.ring text{fill:var(--text);font-size:11.5px;font-weight:600;text-anchor:middle}
+.ci{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;color:var(--blue2);transition:background .2s}
+.ci:hover{background:var(--raise)}
+.bd{display:inline-flex;align-items:center;gap:7px;font-weight:550}
+.bd::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mut)}
+.bd.dead::before{background:var(--blue2)}.bd.dying::before{background:var(--amber)}
+.bd.dead{color:var(--blue2)}.bd.dying{color:var(--amber)}.bd.alive,.bd.unknown{color:var(--mut)}
+.act{display:flex;gap:6px;justify-content:flex-end}
+.lk{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;color:var(--mut);font-size:13px;font-weight:500;transition:background .2s,color .2s}
+.lk:hover{background:var(--raise);color:var(--text)}
+.lk .ic{width:14px;height:14px}
+.mk{opacity:0;transition:opacity .2s}tr:hover .mk,.mk:focus-visible{opacity:1}
+.intro tbody tr{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i)*35ms + 150ms)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.swap{animation:fade .22s ease}
+@keyframes fade{from{opacity:.25}}
+.sk td div{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--raise) 25%,#1E2D55 50%,var(--raise) 75%);background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.empty{padding:64px 0;text-align:center;color:var(--mut)}
+.empty svg{width:40px;height:40px;margin-bottom:12px;stroke-width:1.4}
+.empty b{display:block;color:var(--text);font-weight:600;margin-bottom:4px}
+.pg{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 0 56px;color:var(--mut);font-size:13px}
+.pg button{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);transition:background .2s,opacity .2s}
+.pg button:hover:not(:disabled){background:var(--raise)}.pg button:disabled{opacity:.35;cursor:default}
+/* drawer */
+.ov{position:fixed;inset:0;background:rgba(3,6,15,.6);opacity:0;pointer-events:none;transition:opacity .35s;z-index:30}
+.ov.on{opacity:1;pointer-events:auto}
+aside{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--panel);box-shadow:-1px 0 0 var(--line);transform:translateX(102%);transition:transform .5s var(--ease);z-index:31;display:flex;flex-direction:column}
+aside.on{transform:none}
+.dh{display:flex;align-items:flex-start;justify-content:space-between;padding:24px 24px 8px}
+.dh h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
+.dh p{color:var(--mut);font-size:13px;margin-top:4px;max-width:300px}
+.x{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--mut)}.x:hover{background:var(--raise);color:var(--text)}
+#crit{flex:1;overflow:auto;padding:12px 24px}
+.cr{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);transition:opacity .25s}
+.cr.off{opacity:.45}
+.cr span{flex:1;font-size:13.5px}
+.cr input[type=number]{width:60px;height:32px;border-radius:8px;border:0;background:var(--raise);text-align:center;outline:0}
+.cr input[type=number]:focus{box-shadow:0 0 0 1.5px var(--blue2)}
+.df{padding:18px 24px 24px;border-top:1px solid var(--line);display:grid;gap:14px}
+.df .row{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--mut);font-size:13px}
+.df .row input[type=number]{width:64px;height:32px;border-radius:8px;border:0;background:var(--raise);text-align:center;outline:0}
+.df .btn{justify-content:center;width:100%;height:40px}
+#toasts{position:fixed;right:24px;bottom:24px;display:grid;gap:10px;z-index:40}
+.toast{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:11px;background:#fff;color:#0A1330;font-weight:550;box-shadow:0 14px 34px -10px rgba(0,0,0,.6);animation:tin .5s var(--ease)}
+.toast .ic{color:var(--blue)}
+.toast.out{opacity:0;transform:translateY(8px);transition:.3s}
+@keyframes tin{from{opacity:0;transform:translateY(14px) scale(.96)}}
+@media(max-width:760px){.wrap{padding:0 16px}.stats{grid-template-columns:1fr 1fr;row-gap:20px}.stat:nth-child(3){border:0;padding-left:0}.hd .pill,.hd .btn span{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4.5v11m0 0-4-4m4 4 4-4M5 19.5h14"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+<symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="m4.5 8.5 7.5 5 7.5-5"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5z"/></symbol>
+<symbol id="i-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+<symbol id="i-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-5"/></symbol>
+<symbol id="i-sword" viewBox="0 0 24 24"><path d="M18 6 10 14M14 6h4v4M8.5 11.5l4 4M10.5 13.5l-4 4"/></symbol>
+</svg>
 
-<!-- Topbar -->
-<div class="topbar">
-  <div class="logo">
-    <span class="skull">☠</span>
-    Dead Game Checker
+<header>
+  <div class="wrap hd">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34"><rect width="34" height="34" rx="9" fill="#2F6BFF"/><g transform="translate(5 5)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 10 14M14 6h4v4M8.5 11.5l4 4M10.5 13.5l-4 4"/></g></svg>
+      <div><b>SideQuest</b><span>Dead game scanner</span></div>
+    </div>
+    <div class="pill"><i class="dot" id="nd"></i><span id="nt">Discord alerts</span></div>
+    <button class="btn ghost" id="bCrit"><svg class="ic"><use href="#i-sliders"/></svg><span>Criteria</span></button>
+    <button class="btn ghost" id="bExp"><svg class="ic"><use href="#i-down"/></svg><span>Export Excel</span></button>
+    <button class="btn pri" id="bScan"><svg class="ic"><use href="#i-play"/></svg><span>Scan Steam</span></button>
   </div>
-  <div class="ws-wrap">
-    <span class="ws-dot" id="wsDot"></span>
-    <span id="wsLabel">connecting</span>
-  </div>
-</div>
+  <div id="bar"><i></i></div>
+</header>
 
-<!-- Stats -->
-<div class="statsbar">
-  <div class="stat">
-    <span class="stat-v"   id="sTotal">—</span>
-    <span class="stat-k">Total</span>
-  </div>
-  <div class="stat">
-    <span class="stat-v r" id="sDead">—</span>
-    <span class="stat-k">Dead</span>
-  </div>
-  <div class="stat">
-    <span class="stat-v g" id="sAlive">—</span>
-    <span class="stat-k">Alive</span>
-  </div>
-  <div class="stat">
-    <span class="stat-v r" id="sNew">—</span>
-    <span class="stat-k">New dead 24h</span>
-  </div>
-  <div class="stat">
-    <span class="stat-v"   id="sLast" style="font-size:12px">—</span>
-    <span class="stat-k">Last scan</span>
-  </div>
-</div>
+<main class="wrap">
+  <section class="stats" id="stats">
+    <div class="stat hero"><strong data-k="dead">0</strong><span>Dead games</span></div>
+    <div class="stat"><strong data-k="new_dead_24h">0</strong><span>Found in the last 24h</span></div>
+    <div class="stat"><strong data-k="alive">0</strong><span>Still alive</span></div>
+    <div class="stat"><strong data-k="total">0</strong><span>Games tracked</span></div>
+  </section>
+  <div class="scan" id="scan"><div><p id="scanTxt"></p></div></div>
 
-<!-- Controls -->
-<div class="controls">
-  <div class="filters">
-    <button class="fbtn" data-f="dead"  onclick="setFilter('dead')">💀 Dead</button>
-    <button class="fbtn active" data-f="alive" onclick="setFilter('alive')">✅ Alive</button>
-    <button class="fbtn" data-f="all"   onclick="setFilter('all')">All</button>
+  <div class="tb">
+    <div class="seg" id="seg"><i class="thumb" id="thumb"></i>
+      <button data-f="dead" class="on">Dead</button><button data-f="dying">Dying</button><button data-f="alive">Alive</button><button data-f="all">All</button>
+    </div>
+    <label class="search"><svg class="ic"><use href="#i-search"/></svg><input id="q" placeholder="Search a game" autocomplete="off"></label>
+    <label class="sw"><input type="checkbox" id="cc"><i></i><em>Has contact</em></label>
+    <span id="count"></span>
   </div>
 
-  <button class="scan-btn start" id="scanBtn" onclick="toggleScan()">▶ Start scan</button>
-
-  <div class="search-wrap">
-    <input id="searchInput" type="text" placeholder="Search game name…" oninput="onSearch(this.value)">
+  <div class="tbl intro" id="tbl">
+    <table>
+      <thead><tr><th>Game</th><th class="num">Players</th><th class="num">Reviews</th><th>Score</th><th>Contact</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
   </div>
-</div>
+  <div class="pg"><span id="pgInfo"></span><button id="pp" aria-label="Previous page"><svg class="ic"><use href="#i-l"/></svg></button><button id="pn" aria-label="Next page"><svg class="ic"><use href="#i-r"/></svg></button></div>
+</main>
 
-<!-- Progress bar -->
-<div class="progress-wrap" id="progressWrap">
-  <div class="pbar"><div class="pbar-fill" id="pbarFill" style="width:0%"></div></div>
-  <span class="pbar-pct"  id="pbarPct">0%</span>
-  <span class="pbar-game" id="pbarGame"></span>
-  <span class="pbar-dead" id="pbarDead"></span>
-</div>
-
-<!-- Table -->
-<div class="table-wrap">
-  <table>
-    <colgroup>
-      <col class="c-game">
-      <col class="c-now">
-      <col class="c-owners">
-      <col class="c-status">
-      <col class="c-actions">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Game</th>
-        <th>Now</th>
-        <th>Owners</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="tbody">
-      <tr><td colspan="5" class="mt">Loading…</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- Pagination -->
-<div class="pagination">
-  <span id="pgInfo">—</span>
-  <div class="pg-btns">
-    <button class="pg-btn" id="pgPrev" onclick="goPage(-1)" disabled>← Prev</button>
-    <button class="pg-btn" id="pgNext" onclick="goPage(+1)" disabled>Next →</button>
+<div class="ov" id="ov"></div>
+<aside id="dr" aria-label="Score criteria">
+  <div class="dh"><div><h2>Score criteria</h2><p>Switch criteria on or off. Scores are rescaled to 100 and the Excel export follows the same setup.</p></div><button class="x" id="dx" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div id="crit"></div>
+  <div class="df">
+    <div class="row"><span>Export only scores from</span><input type="number" id="eMin" min="0" max="100" value="0"></div>
+    <button class="btn pri" id="bSave">Save and rescore</button>
   </div>
-</div>
+</aside>
+<div id="toasts"></div>
 
 <script>
-// ── State ─────────────────────────────────────────────────────────────────────
-let filter = 'alive', page = 1, total = 0, search = '', scanning = false;
-const PER = 50;
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=n=>n==null?'—':Number(n).toLocaleString('en');
+const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+const J=(u,o)=>fetch(u,o).then(r=>r.json());
+let filter='dead',page=1,PER=25,search='',first=true,scanning=false,timer;
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws;
-function connectWS() {
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws`);
-  ws.onopen    = () => setWS(true);
-  ws.onclose   = () => { setWS(false); setTimeout(connectWS, 3000); };
-  ws.onmessage = ({ data }) => onMsg(JSON.parse(data));
+function toast(msg){const t=document.createElement('div');t.className='toast';t.innerHTML=ic('ok')+`<span>${esc(msg)}</span>`;$('#toasts').append(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),320)},2800)}
+function countTo(el,to){const from=+el.dataset.v||0;el.dataset.v=to;const t0=performance.now();(function f(t){const p=Math.min((t-t0)/800,1),e=1-Math.pow(1-p,3);el.textContent=nf(Math.round(from+(to-from)*e));if(p<1)requestAnimationFrame(f)})(t0)}
+function thumb(){const b=$('#seg .on');$('#thumb').style.cssText=`width:${b.offsetWidth}px;transform:translateX(${b.offsetLeft}px)`}
+
+async function loadStats(){const s=await J('/api/stats');$$('#stats strong').forEach(e=>countTo(e,s[e.dataset.k]||0))}
+async function loadGames(){
+  const p=new URLSearchParams({page,per_page:PER,sort:'score'});
+  if(filter!=='all')p.set('status',filter);if(search)p.set('search',search);if($('#cc').checked)p.set('has_contact','true');
+  if(first)$('#tb').innerHTML=Array.from({length:8},()=>`<tr class="sk"><td><div style="width:60%"></div></td><td><div></div></td><td><div></div></td><td><div></div></td><td><div></div></td><td><div></div></td><td></td></tr>`).join('');
+  const d=await J('/api/games?'+p);render(d.games);
+  $('#count').textContent=nf(d.total)+' games';
+  const pages=Math.max(1,Math.ceil(d.total/PER));$('#pgInfo').textContent=`Page ${page} of ${pages}`;$('#pp').disabled=page<=1;$('#pn').disabled=page>=pages;
+}
+function ring(s){const c=94.25,col=s>=60?'var(--blue2)':s>=30?'var(--blue)':'var(--mut)';
+  return `<svg class="ring" viewBox="0 0 40 40"><circle class="rt" cx="20" cy="20" r="15"/><circle class="rv" cx="20" cy="20" r="15" stroke="${col}" stroke-dasharray="${c}" style="stroke-dashoffset:${c}" data-o="${c*(1-s/100)}" transform="rotate(-90 20 20)"/><text x="20" y="24.2">${s}</text></svg>`}
+function render(games){
+  const tb=$('#tb');
+  if(!games.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><svg class="ic"><use href="#i-sword"/></svg><b>No games here yet</b>Run a scan, or loosen the filters above.</div></td></tr>`;return}
+  tb.innerHTML=games.map((g,i)=>{
+    const icon=g.icon?`<img class="gi" src="https://cdn.discordapp.com/app-icons/${g.discord_id}/${g.icon}.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'gi',textContent:'${esc((g.name||'?')[0]).replace(/'/g,'')}'}))">`:`<div class="gi">${esc((g.name||'?')[0])}</div>`;
+    const c=g.contact||'',cl=!c?'<span class="zero">—</span>':c.includes('@')?`<a class="ci" href="mailto:${esc(c)}" title="${esc(c)}">${ic('mail')}</a>`:`<a class="ci" href="${esc(c)}" target="_blank" rel="noopener" title="${esc(c)}">${ic('globe')}</a>`;
+    return `<tr style="--i:${i}"><td><div class="game">${icon}<div style="min-width:0"><div class="gn">${esc(g.name)}</div><div class="gs">${esc(g.developers||'Unknown developer')}</div></div></div></td>
+    <td class="num ${g.current_players?'':'zero'}">${nf(g.current_players)}</td><td class="num ${g.total_reviews?'':'zero'}">${nf(g.total_reviews)}</td>
+    <td>${ring(g.score||0)}</td><td>${cl}</td><td><span class="bd ${g.status}">${g.status[0].toUpperCase()+g.status.slice(1)}</span></td>
+    <td><div class="act">${g.status!=='dead'?`<button class="lk mk" data-dead="${g.discord_id}">Mark dead</button>`:''}${g.steam_appid?`<a class="lk" href="https://store.steampowered.com/app/${g.steam_appid}" target="_blank" rel="noopener">Steam ${ic('out')}</a>`:''}<a class="lk" href="https://discord.com/developers/applications/${g.discord_id}" target="_blank" rel="noopener">Claim ${ic('out')}</a></div></td></tr>`}).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.rv').forEach(e=>e.style.strokeDashoffset=e.dataset.o)));
+  const t=$('#tbl');if(first){first=false;setTimeout(()=>t.classList.remove('intro'),1400)}else{t.classList.remove('swap');void t.offsetWidth;t.classList.add('swap')}
 }
 
-function setWS(up) {
-  document.getElementById('wsDot').className    = 'ws-dot' + (up ? ' on' : '');
-  document.getElementById('wsLabel').textContent = up ? 'live' : 'reconnecting…';
+// scan state
+function setScan(s){
+  scanning=!!s.is_running;const b=$('#bScan');
+  b.className='btn '+(scanning?'stop':'pri');b.innerHTML=`${ic(scanning?'stop':'play')}<span>${scanning?'Stop scan':'Scan Steam'}</span>`;
+  $('#bar').classList.toggle('run',scanning);$('#bar i').style.width=(scanning?s.pct||0:0)+'%';
+  $('#scan').classList.toggle('on',scanning);
+  if(scanning)$('#scanTxt').innerHTML=`Scanning <b>${esc(s.current_game||'Steam library')}</b> — ${nf(s.progress)} of ${nf(s.total)} checked, ${nf(s.dead_count)} dead found`;
+}
+function connect(){
+  const ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');
+  ws.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.type==='scan_status'||m.type==='scan_progress')setScan(m);
+    if(m.type==='scan_started')setScan({is_running:true,pct:0});
+    if(m.type==='scan_complete'){setScan({is_running:false});toast(m.status==='stopped'?'Scan stopped':`Scan complete: ${m.new_dead} new dead games`);loadStats();loadGames()}
+    if(m.type==='scan_error')toast('Scan failed: '+m.error);
+    if(m.type==='game_updated'){loadStats();loadGames()}};
+  ws.onclose=()=>setTimeout(connect,2000);
 }
 
-function onMsg(d) {
-  const t = d.type;
-  if (t === 'scan_status' || t === 'scan_progress') {
-    updateProgress(d);
-  } else if (t === 'scan_started') {
-    scanning = true; refreshBtn();
-  } else if (t === 'scan_complete' || t === 'scan_error') {
-    scanning = false; refreshBtn();
-    document.getElementById('progressWrap').classList.remove('show');
-    loadStats(); loadGames();
-  } else if (t === 'game_updated') {
-    loadGames();
-  }
-}
+// criteria drawer
+const drawer=on=>{$('#dr').classList.toggle('on',on);$('#ov').classList.toggle('on',on)};
+async function loadCrit(){const c=await J('/api/criteria');
+  $('#crit').innerHTML=Object.entries(c).map(([k,v])=>`<div class="cr ${v.enabled?'':'off'}"><label class="sw"><input type="checkbox" data-k="${k}" ${v.enabled?'checked':''}><i></i></label><span>${esc(v.label)}</span><input type="number" min="0" max="100" data-p="${k}" value="${v.points}" ${v.enabled?'':'disabled'} aria-label="Points"></div>`).join('')}
+$('#crit').addEventListener('change',e=>{const k=e.target.dataset.k;if(!k)return;const r=e.target.closest('.cr');r.classList.toggle('off',!e.target.checked);r.querySelector('[data-p]').disabled=!e.target.checked});
+$('#bSave').onclick=async()=>{const body={};$$('#crit [data-k]').forEach(el=>body[el.dataset.k]={enabled:el.checked,points:+$(`[data-p="${el.dataset.k}"]`).value});
+  const r=await J('/api/criteria',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  drawer(false);toast(`Scores updated for ${nf(r.recomputed)} games`);loadGames()};
+$('#bCrit').onclick=()=>drawer(true);$('#dx').onclick=$('#ov').onclick=()=>drawer(false);
+addEventListener('keydown',e=>{if(e.key==='Escape')drawer(false);if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();$('#q').focus()}});
 
-function updateProgress(d) {
-  scanning = d.is_running;
-  refreshBtn();
-  const wrap = document.getElementById('progressWrap');
-  if (d.is_running) {
-    wrap.classList.add('show');
-    document.getElementById('pbarFill').style.width    = `${d.pct || 0}%`;
-    document.getElementById('pbarPct').textContent     = `${d.pct || 0}%`;
-    document.getElementById('pbarGame').textContent    = d.current_game || '';
-    document.getElementById('pbarDead').textContent    = d.dead_count ? `${d.dead_count} dead` : '';
-  } else {
-    wrap.classList.remove('show');
-  }
-}
+// actions
+$('#bScan').onclick=()=>fetch(scanning?'/api/scan/stop':'/api/scan/start',{method:'POST'});
+$('#bExp').onclick=()=>{const p=new URLSearchParams({status:(filter==='dead'||filter==='dying')?filter:'dead,dying',min_score:$('#eMin').value||0,has_contact:$('#cc').checked});location.href='/api/export.xlsx?'+p;toast('Your Excel file is downloading')};
+$('#seg').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('#seg button').forEach(x=>x.classList.toggle('on',x===b));filter=b.dataset.f;page=1;thumb();loadGames()};
+$('#q').oninput=e=>{clearTimeout(timer);timer=setTimeout(()=>{search=e.target.value.trim();page=1;loadGames()},250)};
+$('#cc').onchange=()=>{page=1;loadGames()};
+$('#pp').onclick=()=>{page--;loadGames()};$('#pn').onclick=()=>{page++;loadGames()};
+$('#tb').onclick=async e=>{const b=e.target.closest('[data-dead]');if(!b)return;
+  await fetch(`/api/games/${b.dataset.dead}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'dead'})});toast('Marked as dead')};
 
-function refreshBtn() {
-  const btn = document.getElementById('scanBtn');
-  btn.textContent = scanning ? '⏹ Stop scan' : '▶ Start scan';
-  btn.className   = 'scan-btn ' + (scanning ? 'stop' : 'start');
-}
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-async function loadStats() {
-  const s = await fetch('/api/stats').then(r => r.json());
-  document.getElementById('sTotal').textContent = fmt(s.total);
-  document.getElementById('sDead').textContent  = fmt(s.dead);
-  document.getElementById('sAlive').textContent = fmt(s.alive);
-  document.getElementById('sNew').textContent   = fmt(s.new_dead_24h);
-  if (s.last_scan) {
-    const t = new Date(s.last_scan.started_at.endsWith('Z')
-      ? s.last_scan.started_at
-      : s.last_scan.started_at + 'Z');
-    document.getElementById('sLast').textContent =
-      t.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' +
-      t.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
-  }
-}
-
-async function loadGames() {
-  const q = new URLSearchParams({ page, per_page: PER, sort: 'current' });
-  if (filter !== 'all') q.set('status', filter);
-  if (search) q.set('search', search);
-  const { games, total: t } = await fetch(`/api/games?${q}`).then(r => r.json());
-  total = t;
-  renderTable(games);
-  renderPager(t);
-}
-
-// ── Render ────────────────────────────────────────────────────────────────────
-function renderTable(games) {
-  const tbody = document.getElementById('tbody');
-  if (!games.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="mt">No games found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = games.map(g => {
-    const iconSrc = g.icon
-      ? `https://cdn.discordapp.com/app-icons/${g.discord_id}/${g.icon}.png`
-      : null;
-    const iconEl  = `<img class="game-icon" src="${iconSrc || ''}" alt=""
-      ${iconSrc ? `onerror="this.src=''; this.style.opacity='.15'"` : `style="opacity:.15"`}>`;
-
-    const nowCls = g.current_players === 0 ? 'z' : g.current_players === null ? 'd' : '';
-    const nowTxt = g.current_players !== null ? numK(g.current_players) : '—';
-
-    const devUrl   = `https://discord.com/developers/applications/${g.discord_id}`;
-    const steamUrl = g.steam_appid ? `https://store.steampowered.com/app/${g.steam_appid}` : null;
-
-    const markBtn = g.status !== 'dead'
-      ? `<button class="abtn abtn-mark" onclick="markDead('${g.discord_id}')">Mark dead</button>`
-      : '';
-
-    return `<tr>
-      <td>
-        <div class="game-cell">
-          ${iconEl}
-          <div class="game-info">
-            <div class="game-name">${esc(g.name)}</div>
-            <div class="game-id">${g.discord_id}</div>
-          </div>
-        </div>
-      </td>
-      <td><span class="num ${nowCls}">${nowTxt}</span></td>
-      <td>${g.owners ? `<span class="own-text">${fmtOwners(g.owners)}</span>` : `<span class="num d">—</span>`}</td>
-      <td><span class="badge ${g.status}">${g.status}</span></td>
-      <td>
-        <div class="act-row">
-          <a class="abtn abtn-claim" href="${devUrl}" target="_blank" rel="noopener">Claim ↗</a>
-          ${steamUrl ? `<a class="abtn abtn-steam" href="${steamUrl}" target="_blank" rel="noopener">Steam ↗</a>` : ''}
-          ${markBtn}
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function renderPager(t) {
-  const pages = Math.ceil(t / PER);
-  const from  = t ? (page - 1) * PER + 1 : 0;
-  const to    = Math.min(page * PER, t);
-  document.getElementById('pgInfo').textContent =
-    t ? `${from}–${to} of ${fmt(t)}` : '0 results';
-  document.getElementById('pgPrev').disabled = page <= 1;
-  document.getElementById('pgNext').disabled = page >= pages;
-}
-
-// ── Controls ──────────────────────────────────────────────────────────────────
-function setFilter(f) {
-  filter = f; page = 1;
-  document.querySelectorAll('.fbtn').forEach(b =>
-    b.classList.toggle('active', b.dataset.f === f)
-  );
-  loadGames();
-}
-
-let st;
-function onSearch(v) {
-  clearTimeout(st);
-  st = setTimeout(() => { search = v.trim(); page = 1; loadGames(); }, 280);
-}
-
-function goPage(d) { page += d; loadGames(); scrollTo(0, 0); }
-
-async function toggleScan() {
-  await fetch(scanning ? '/api/scan/stop' : '/api/scan/start', { method: 'POST' });
-}
-
-async function markDead(id) {
-  await fetch(`/api/games/${id}/status`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: 'dead' }),
-  });
-}
-
-// ── Utils ─────────────────────────────────────────────────────────────────────
-const fmt  = n  => (n ?? 0).toLocaleString();
-const numK = n  => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
-const esc  = s  => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-
-function fmtOwners(s) {
-  return s.replace(/\d+/g, n => {
-    const v = +n;
-    if (v >= 1_000_000) return (v / 1_000_000).toFixed(0) + 'M';
-    if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K';
-    return n;
-  });
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-connectWS();
-loadStats();
-loadGames();
-setInterval(loadStats, 30_000);
+addEventListener('load',()=>{thumb();loadStats();loadGames();loadCrit();connect();
+  J('/api/notifier/status').then(n=>{$('#nd').classList.toggle('on',n.connected);$('#nt').textContent=n.connected?'Discord alerts on':'Discord alerts off'}).catch(()=>{})});
+addEventListener('resize',thumb);
 </script>
 </body>
 </html>
