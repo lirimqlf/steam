@@ -12,7 +12,7 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,6 +20,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 load_dotenv(dotenv_path="_env")
 
 import database as db
+from export import build_xlsx
 from scanner import Scanner
 
 # ── WebSocket broadcast ───────────────────────────────────────────────────────
@@ -108,13 +109,15 @@ async def get_stats():
 async def get_games(
     status:   Optional[str] = None,
     search:   Optional[str] = None,
-    sort:     str = "current",
+    sort:     str = "score",
     page:     int = 1,
     per_page: int = 50,
+    min_score:   int = 0,
+    has_contact: bool = False,
 ):
     return await db.get_games(
-        status=status, search=search,
-        sort=sort, page=page, per_page=per_page,
+        status=status, search=search, sort=sort, page=page, per_page=per_page,
+        min_score=min_score, has_contact=has_contact,
     )
 
 
@@ -156,7 +159,7 @@ class PatchGame(BaseModel):
 
 @app.patch("/api/games/{discord_id}/status")
 async def patch_status(discord_id: str, body: PatchGame):
-    valid = {"dead", "alive", "unchecked"}
+    valid = {"dead", "dying", "alive", "unchecked", "unknown"}
     if body.status not in valid:
         raise HTTPException(400, f"status must be one of {valid}")
     await db.patch_game_status(discord_id, body.status, body.notes)
@@ -166,6 +169,29 @@ async def patch_status(discord_id: str, body: PatchGame):
         "status": body.status,
     })
     return {"ok": True}
+
+
+@app.get("/api/criteria")
+async def get_criteria():
+    return await db.get_criteria()
+
+
+@app.put("/api/criteria")
+async def put_criteria(body: dict):
+    cfg = await db.set_criteria(body)
+    return {"ok": True, "recomputed": await db.recompute_scores(), "criteria": cfg}
+
+
+@app.get("/api/export.xlsx")
+async def export_xlsx(status: str = "dead,dying", min_score: int = 0, has_contact: bool = False):
+    valid = [x for x in status.split(",") if x in {"dead", "dying", "alive", "unknown"}] or ["dead"]
+    cfg  = await db.get_criteria()
+    rows = await db.export_rows(valid, min_score, has_contact)
+    data = build_xlsx(rows, cfg, valid)
+    name = f"leads-{datetime.utcnow():%Y%m%d-%H%M}.xlsx"
+    return Response(data, headers={
+        "Content-Disposition": f'attachment; filename="{name}"',
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
 
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────

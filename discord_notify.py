@@ -20,27 +20,21 @@ class DiscordNotifier:
         except Exception as e:
             print(f"[!] Discord webhook error: {e}")
 
-    async def notify_new_dead(
-        self,
-        name: str,
-        discord_id: str,
-        steam_appid: str,
-        current_players: int,
-        players_2weeks: int,
-        owners: str,
-    ):
+    async def notify_new_dead(self, name, discord_id, steam_appid, current_players,
+                              total_reviews=0, inactive_days=None, score=0, contact=""):
         dev_url   = f"https://discord.com/developers/applications/{discord_id}"
         steam_url = f"https://store.steampowered.com/app/{steam_appid}"
-
+        inactive  = f"{inactive_days}d" if inactive_days is not None else "jamais"
         await self._post({
             "embeds": [{
-                "title":       f"💀 {name}",
+                "title":       f"💀 {name}  ·  score {score}/100",
                 "description": f"**[Claim on Discord]({dev_url})** · [Steam]({steam_url})",
                 "color":       0xFF4444,
                 "fields": [
                     {"name": "Players now", "value": f"`{current_players}`", "inline": True},
-                    {"name": "Players 2w",  "value": f"`{players_2weeks}`",  "inline": True},
-                    {"name": "Owners",      "value": owners or "N/A",        "inline": True},
+                    {"name": "Reviews",     "value": f"`{total_reviews}`",   "inline": True},
+                    {"name": "Dernière activité", "value": f"`{inactive}`",  "inline": True},
+                    {"name": "Contact",     "value": contact or "aucun",     "inline": False},
                 ],
                 "timestamp": datetime.utcnow().isoformat() + "Z",
                 "footer": {"text": "Dead Game Checker"},
