@@ -5,136 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SideQuest · Dead game scanner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#080D1C;--panel:#0F1730;--raise:#16213F;--line:rgba(160,185,255,.10);--text:#F2F6FF;--mut:#8D9AB9;--blue:#2F6BFF;--blue2:#6C97FF;--amber:#F2B84B;--r:12px;--ease:cubic-bezier(.22,1,.36,1)}
+:root{--bg:#050505;--p:#0B0B0B;--p2:#131313;--line:rgba(255,255,255,.09);--l2:rgba(255,255,255,.2);--t:#F5F5F2;--m:#8B8B86;--d:#4B4B48;--ease:cubic-bezier(.22,1,.36,1);--mx:50%;--my:0}
 *{box-sizing:border-box;margin:0}
-body{background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-feature-settings:"tnum","cv11";-webkit-font-smoothing:antialiased;min-height:100vh}
-button,input{font:inherit;color:inherit}
-button{cursor:pointer;border:0;background:none}
-a{color:inherit;text-decoration:none}
-:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px}
-.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
-/* header */
-header{position:sticky;top:0;z-index:20;background:rgba(8,13,28,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-.hd{display:flex;align-items:center;gap:14px;height:64px}
-.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
-.brand b{font-size:15px;font-weight:650;letter-spacing:-.01em;display:block;line-height:1.15}
-.brand span{color:var(--mut);font-size:12.5px}
-.pill{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12.5px;padding:0 6px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--mut);transition:background .3s,box-shadow .3s}
-.dot.on{background:#7FB0FF;box-shadow:0 0 0 4px rgba(108,151,255,.16)}
-.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:550;transition:background .2s,transform .15s var(--ease),box-shadow .2s}
-.btn:active{transform:scale(.97)}
-.btn.ghost{color:var(--text);background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
-.btn.ghost:hover{background:var(--raise)}
-.btn.pri{background:var(--blue);color:#fff;box-shadow:0 6px 18px -6px rgba(47,107,255,.7)}
-.btn.pri:hover{background:#4378FF}
-.btn.stop{background:#fff;color:#0A1330}
-#bar{height:2px;background:transparent;position:relative;overflow:hidden}
-#bar i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));transition:width .5s var(--ease)}
-#bar.run i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);animation:sweep 1.3s linear infinite}
-@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-/* stats */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);margin:28px 0 8px}
-.stat{padding:2px 28px;border-left:1px solid var(--line)}
-.stat:first-child{padding-left:0;border:0}
-.stat strong{display:block;font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.1}
-.stat.hero strong{color:var(--blue2)}
-.stat span{color:var(--mut);font-size:13px}
-.scan{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
-.scan.on{grid-template-rows:1fr}
-.scan>div{overflow:hidden}
-.scan p{margin:12px 0 0;color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scan p b{color:var(--text);font-weight:550}
+html{background:var(--bg)}
+body{color:var(--t);font:14px/1.45 Geist,Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:90;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none}a{color:inherit;text-decoration:none}
+::selection{background:#fff;color:#000}
+:focus-visible{outline:1.5px solid #fff;outline-offset:3px;border-radius:6px}
+.mono,.n,td.num,.kv b,#count,.rk{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-feature-settings:"tnum"}
+.ic{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{max-width:1280px;margin:0 auto;padding:0 32px}
+header{position:sticky;top:0;z-index:20;background:rgba(5,5,5,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.hd{display:flex;align-items:center;gap:10px;height:62px}
+.brand{display:flex;align-items:center;gap:11px;margin-right:auto;font-weight:600;letter-spacing:-.02em}
+.brand i{width:30px;height:30px;border-radius:8px;background:#fff;color:#000;display:grid;place-items:center}
+.brand small{color:var(--m);font-weight:400;font-size:13px;margin-left:2px}
+.live{display:flex;align-items:center;gap:8px;color:var(--m);font-size:12.5px;margin-right:8px;font-family:"Geist Mono",monospace}
+.live i{width:6px;height:6px;background:var(--d)}.live i.on{background:#fff;animation:blink 2.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:9px;font-weight:550;transition:background .25s,color .25s,transform .2s var(--ease),box-shadow .25s;position:relative}
+.btn:active{transform:scale(.96)}
+.btn.ghost{box-shadow:inset 0 0 0 1px var(--l2)}.btn.ghost:hover{background:#fff;color:#000}
+.btn.pri{background:#fff;color:#000}.btn.pri:hover{box-shadow:0 0 0 4px rgba(255,255,255,.14)}
+.btn.stop{background:transparent;box-shadow:inset 0 0 0 1px #fff}
+.badge{min-width:18px;height:18px;border-radius:9px;background:#fff;color:#000;font:600 11px/18px "Geist Mono",monospace;text-align:center;padding:0 5px;transform:scale(0);transition:transform .35s var(--ease)}
+.badge.on{transform:scale(1)}.btn.ghost:hover .badge{background:#000;color:#fff}
+#bar{height:1px;position:relative;overflow:hidden}#bar i{position:absolute;inset:0 auto 0 0;width:0;background:#fff;transition:width .6s var(--ease)}
+#bar.run i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#000 50%,transparent);animation:sw 1.2s linear infinite}
+@keyframes sw{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+/* hero */
+.hero{position:relative;padding:56px 0 36px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(520px circle at var(--mx) var(--my),rgba(255,255,255,.07),transparent 70%);pointer-events:none}
+.hg{display:grid;grid-template-columns:1fr auto;align-items:end;gap:40px;position:relative}
+.lbl{color:var(--m);font-size:13.5px;display:flex;align-items:center;gap:10px;overflow:hidden}
+.lbl span{display:inline-block;transform:translateY(110%);animation:up .9s var(--ease) .1s forwards}
+@keyframes up{to{transform:none}}
+#big{font:500 clamp(84px,15vw,188px)/.88 Geist,Inter,sans-serif;letter-spacing:-.065em;font-feature-settings:"tnum";margin-top:10px}
+.kvs{display:grid;gap:14px;min-width:230px;padding-bottom:10px}
+.kv{display:flex;justify-content:space-between;gap:30px;padding-bottom:10px;border-bottom:1px solid var(--line);color:var(--m)}
+.kv b{color:var(--t);font-weight:500}
+.dist{display:flex;gap:3px;height:34px;margin-top:38px;position:relative}
+.dist>div{position:relative;transform-origin:left;transform:scaleX(0);flex:0 0 auto;min-width:2px;transition:flex-basis 1s var(--ease)}
+.dist.go>div{animation:grow 1.1s var(--ease) forwards;animation-delay:calc(var(--i)*120ms + 300ms)}
+@keyframes grow{to{transform:none}}
+.dist .s0{background:#fff}.dist .s1{background:repeating-linear-gradient(135deg,#fff 0 2px,transparent 2px 5px)}.dist .s2{background:#2A2A28}.dist .s3{box-shadow:inset 0 0 0 1px var(--d)}
+.leg{display:flex;gap:26px;margin-top:14px;color:var(--m);font-size:12.5px;flex-wrap:wrap}
+.leg span{display:flex;align-items:center;gap:8px}.leg i{width:10px;height:10px;display:block}.leg b{color:var(--t);font-weight:500;font-family:"Geist Mono",monospace}
+.scanl{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s var(--ease)}.scanl.on{grid-template-rows:1fr}.scanl>div{overflow:hidden}
+.scanl p{margin-top:18px;font:12.5px "Geist Mono",monospace;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scanl b{color:#fff;font-weight:500}
 /* toolbar */
-.tb{display:flex;align-items:center;gap:14px;margin:26px 0 14px;flex-wrap:wrap}
-.seg{position:relative;display:flex;padding:3px;background:var(--panel);border-radius:11px;box-shadow:inset 0 0 0 1px var(--line)}
-.seg button{position:relative;z-index:1;padding:6px 16px;border-radius:8px;color:var(--mut);font-weight:550;transition:color .25s}
-.seg button.on{color:#fff}
-.thumb{position:absolute;top:3px;bottom:3px;left:0;border-radius:8px;background:var(--blue);transition:transform .4s var(--ease),width .4s var(--ease)}
-.search{position:relative;flex:1;min-width:200px;max-width:340px}
-.search .ic{position:absolute;left:12px;top:9px;color:var(--mut)}
-.search input{width:100%;height:36px;padding:0 12px 0 38px;border-radius:10px;border:0;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);outline:0;transition:box-shadow .2s}
-.search input:focus{box-shadow:inset 0 0 0 1.5px var(--blue2)}
-.sw{display:inline-flex;align-items:center;gap:10px;color:var(--mut);cursor:pointer;user-select:none}
-.sw input{display:none}
-.sw i{width:34px;height:20px;border-radius:20px;background:var(--raise);position:relative;transition:background .25s;flex:none}
-.sw i::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .3s var(--ease)}
-.sw input:checked+i{background:var(--blue)}
-.sw input:checked+i::after{transform:translateX(14px)}
-.sw input:checked~em{color:var(--text)}
-.sw em{font-style:normal}
-#count{margin-left:auto;color:var(--mut);font-size:13px}
+.tb{display:flex;align-items:center;gap:12px;margin:18px 0 0;padding:14px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.seg{position:relative;display:flex;padding:3px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line)}
+.seg button{position:relative;z-index:1;padding:6px 15px;border-radius:7px;color:var(--m);font-weight:550;transition:color .3s}.seg button.on{color:#000}
+.thumb{position:absolute;top:3px;bottom:3px;left:0;border-radius:7px;background:#fff;transition:transform .5s var(--ease),width .5s var(--ease)}
+.search{position:relative;flex:1;min-width:190px;max-width:320px}.search .ic{position:absolute;left:12px;top:9.5px;color:var(--m)}
+.search input{width:100%;height:36px;padding:0 12px 0 37px;border:0;border-radius:9px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);outline:0;transition:box-shadow .25s}
+.search input:focus{box-shadow:inset 0 0 0 1px #fff}.search kbd{position:absolute;right:10px;top:8px;font:11px "Geist Mono",monospace;color:var(--d);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+#count{margin-left:auto;color:var(--m);font-size:12.5px}
+/* filters */
+.fp{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s var(--ease)}.fp.on{grid-template-rows:1fr}.fp>div{overflow:hidden}
+.fg{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line);margin-bottom:6px}
+.fc{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:82px;transition:background .3s;opacity:0;transform:translateY(6px)}
+.fp.on .fc{animation:up2 .55s var(--ease) forwards;animation-delay:calc(var(--i)*28ms + 120ms)}@keyframes up2{to{opacity:1;transform:none}}
+.fc.act{background:var(--p2)}
+.fh{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:550;font-size:13px}
+.fb{display:flex;gap:10px;margin-top:12px;transition:opacity .3s}.fc:not(.act) .fb{opacity:.28;pointer-events:none}
+.fb input{width:100%;min-width:0;height:28px;border:0;border-bottom:1px solid var(--l2);background:transparent;outline:0;font:13px "Geist Mono",monospace;transition:border-color .2s}.fb input:focus{border-color:#fff}
+.fb input::placeholder{color:var(--d)}
+.ff{display:flex;align-items:center;justify-content:space-between;color:var(--m);font-size:12.5px;padding:10px 0 6px}
+.ff button{color:var(--m);text-decoration:underline;text-underline-offset:3px}.ff button:hover{color:#fff}
 /* table */
-.tbl{background:var(--panel);border-radius:16px;box-shadow:inset 0 0 0 1px var(--line);overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:880px}
-th{text-align:left;font-weight:500;color:var(--mut);font-size:12.5px;padding:14px 16px;border-bottom:1px solid var(--line)}
-td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
-tr:last-child td{border:0}
-tbody tr{transition:background .2s}
-tbody tr:hover{background:rgba(108,151,255,.05)}
-.num{text-align:right}th.num{text-align:right}
+.tbl{overflow-x:auto;border-top:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;min-width:960px}
+th{text-align:left;font-weight:450;color:var(--m);font-size:12.5px;padding:14px 12px;border-bottom:1px solid var(--line)}th.num{text-align:right}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.num{text-align:right;font-size:13px}.rk{color:var(--d);font-size:12px;width:44px}
+tr.r{cursor:pointer;transition:background .25s}tr.r:hover{background:var(--p)}tr.r td:first-child{box-shadow:inset 0 0 0 0 #fff;transition:box-shadow .3s var(--ease)}tr.r:hover td:first-child{box-shadow:inset 2px 0 0 0 #fff}
+tr.r.open td{border-bottom-color:transparent;background:var(--p)}
 .game{display:flex;align-items:center;gap:12px;min-width:0}
-.gi{width:36px;height:36px;border-radius:9px;background:var(--raise);object-fit:cover;flex:none;display:grid;place-items:center;color:var(--mut);font-weight:600}
-.gn{font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
-.gs{color:var(--mut);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
-.zero{color:var(--mut)}
-.ring{width:38px;height:38px;display:block}
-.ring circle{fill:none;stroke-width:3.2;stroke-linecap:round}
-.ring .rt{stroke:var(--raise)}
-.ring .rv{transition:stroke-dashoffset 1s var(--ease) .1s}
-.ring text{fill:var(--text);font-size:11.5px;font-weight:600;text-anchor:middle}
-.ci{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;color:var(--blue2);transition:background .2s}
-.ci:hover{background:var(--raise)}
-.bd{display:inline-flex;align-items:center;gap:7px;font-weight:550}
-.bd::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mut)}
-.bd.dead::before{background:var(--blue2)}.bd.dying::before{background:var(--amber)}
-.bd.dead{color:var(--blue2)}.bd.dying{color:var(--amber)}.bd.alive,.bd.unknown{color:var(--mut)}
-.act{display:flex;gap:6px;justify-content:flex-end}
-.lk{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:8px;color:var(--mut);font-size:13px;font-weight:500;transition:background .2s,color .2s}
-.lk:hover{background:var(--raise);color:var(--text)}
-.lk .ic{width:14px;height:14px}
-.mk{opacity:0;transition:opacity .2s}tr:hover .mk,.mk:focus-visible{opacity:1}
-.intro tbody tr{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i)*35ms + 150ms)}
-@keyframes rise{from{opacity:0;transform:translateY(8px)}}
-.swap{animation:fade .22s ease}
-@keyframes fade{from{opacity:.25}}
-.sk td div{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--raise) 25%,#1E2D55 50%,var(--raise) 75%);background-size:200% 100%;animation:sh 1.2s linear infinite}
-@keyframes sh{to{background-position:-200% 0}}
-.empty{padding:64px 0;text-align:center;color:var(--mut)}
-.empty svg{width:40px;height:40px;margin-bottom:12px;stroke-width:1.4}
-.empty b{display:block;color:var(--text);font-weight:600;margin-bottom:4px}
-.pg{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 0 56px;color:var(--mut);font-size:13px}
-.pg button{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);transition:background .2s,opacity .2s}
-.pg button:hover:not(:disabled){background:var(--raise)}.pg button:disabled{opacity:.35;cursor:default}
-/* drawer */
-.ov{position:fixed;inset:0;background:rgba(3,6,15,.6);opacity:0;pointer-events:none;transition:opacity .35s;z-index:30}
-.ov.on{opacity:1;pointer-events:auto}
-aside{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--panel);box-shadow:-1px 0 0 var(--line);transform:translateX(102%);transition:transform .5s var(--ease);z-index:31;display:flex;flex-direction:column}
-aside.on{transform:none}
-.dh{display:flex;align-items:flex-start;justify-content:space-between;padding:24px 24px 8px}
-.dh h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
-.dh p{color:var(--mut);font-size:13px;margin-top:4px;max-width:300px}
-.x{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--mut)}.x:hover{background:var(--raise);color:var(--text)}
-#crit{flex:1;overflow:auto;padding:12px 24px}
-.cr{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);transition:opacity .25s}
-.cr.off{opacity:.45}
-.cr span{flex:1;font-size:13.5px}
-.cr input[type=number]{width:60px;height:32px;border-radius:8px;border:0;background:var(--raise);text-align:center;outline:0}
-.cr input[type=number]:focus{box-shadow:0 0 0 1.5px var(--blue2)}
-.df{padding:18px 24px 24px;border-top:1px solid var(--line);display:grid;gap:14px}
-.df .row{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--mut);font-size:13px}
-.df .row input[type=number]{width:64px;height:32px;border-radius:8px;border:0;background:var(--raise);text-align:center;outline:0}
-.df .btn{justify-content:center;width:100%;height:40px}
-#toasts{position:fixed;right:24px;bottom:24px;display:grid;gap:10px;z-index:40}
-.toast{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:11px;background:#fff;color:#0A1330;font-weight:550;box-shadow:0 14px 34px -10px rgba(0,0,0,.6);animation:tin .5s var(--ease)}
-.toast .ic{color:var(--blue)}
-.toast.out{opacity:0;transform:translateY(8px);transition:.3s}
-@keyframes tin{from{opacity:0;transform:translateY(14px) scale(.96)}}
-@media(max-width:760px){.wrap{padding:0 16px}.stats{grid-template-columns:1fr 1fr;row-gap:20px}.stat:nth-child(3){border:0;padding-left:0}.hd .pill,.hd .btn span{display:none}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+.gi{width:34px;height:34px;border-radius:8px;background:var(--p2);object-fit:cover;flex:none;display:grid;place-items:center;color:var(--m);font-weight:600;filter:grayscale(1) contrast(1.05);transition:filter .4s}tr.r:hover .gi{filter:none}
+.gn{font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px}
+.gs{color:var(--m);font:12px "Geist Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px}
+.z{color:var(--d)}
+.sc{display:flex;align-items:center;gap:10px;font:13px "Geist Mono",monospace}.sc div{width:80px;height:10px;background:repeating-linear-gradient(90deg,#262624 0 2px,transparent 2px 4px)}
+.sc div i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#fff 0 2px,transparent 2px 4px);transition:width 1.1s var(--ease)}
+.ci{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;transition:background .2s,color .2s}.ci:hover{background:#fff;color:#000}
+.st{display:inline-flex;align-items:center;height:22px;padding:0 10px;border-radius:11px;font-size:12px;font-weight:550}
+.st.dead{background:#fff;color:#000}.st.dying{box-shadow:inset 0 0 0 1px #fff}.st.alive,.st.unknown{color:var(--m);box-shadow:inset 0 0 0 1px var(--line)}
+.act{display:flex;gap:2px;justify-content:flex-end}
+.lk{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px;border-radius:7px;color:var(--m);font-size:12.5px;transition:background .2s,color .2s}.lk:hover{background:#fff;color:#000}.lk .ic{width:13px;height:13px}
+.mk{opacity:0;transition:opacity .2s}tr.r:hover .mk{opacity:1}
+.dt td{padding:0;border-bottom:1px solid var(--line)}.dt:not(:has(+ *)) td{border:0}
+.dx{display:grid;grid-template-rows:0fr;transition:grid-template-rows .55s var(--ease);background:var(--p)}.dx>div{overflow:hidden}.r.open+.dt .dx{grid-template-rows:1fr}
+.dg{display:grid;grid-template-columns:repeat(5,1fr);gap:18px 24px;padding:6px 12px 22px 56px}
+.dg div{min-width:0}.dg small{display:block;color:var(--d);font-size:12px;margin-bottom:2px}.dg span{font:13px "Geist Mono",monospace;word-break:break-word}
+.intro tr.r{animation:rowin .7s var(--ease) both;animation-delay:calc(var(--i)*30ms + 700ms)}@keyframes rowin{from{opacity:0;transform:translateY(10px)}}
+.swap{animation:fd .25s}@keyframes fd{from{opacity:.2}}
+.sk td i{display:block;height:12px;background:linear-gradient(90deg,var(--p2) 25%,#222 50%,var(--p2) 75%);background-size:200% 100%;animation:sh 1.2s linear infinite}@keyframes sh{to{background-position:-200% 0}}
+.empty{padding:80px 0;text-align:center;color:var(--m)}.empty b{display:block;color:var(--t);font-size:16px;margin-bottom:4px}
+.pg{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:18px 0 64px;color:var(--m);font:12.5px "Geist Mono",monospace}
+.pg button{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;box-shadow:inset 0 0 0 1px var(--line);transition:background .25s,color .25s}.pg button:hover:not(:disabled){background:#fff;color:#000}.pg button:disabled{opacity:.3;cursor:default}
+/* drawer + switches + toasts */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);opacity:0;pointer-events:none;transition:opacity .4s;z-index:30}.ov.on{opacity:1;pointer-events:auto}
+aside{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:#0A0A0A;box-shadow:-1px 0 0 var(--line);transform:translateX(103%);transition:transform .6s var(--ease);z-index:31;display:flex;flex-direction:column}aside.on{transform:none}
+.dh{display:flex;justify-content:space-between;padding:26px 26px 8px}.dh h2{font-size:20px;font-weight:600;letter-spacing:-.02em}.dh p{color:var(--m);font-size:13px;margin-top:4px;max-width:310px}
+.x{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--m);transition:background .2s,color .2s}.x:hover{background:#fff;color:#000}
+.tabs{display:flex;gap:6px;padding:10px 26px 0}.tabs button{padding:7px 14px;border-radius:8px;color:var(--m);font-weight:550;transition:.25s}.tabs .on{background:#fff;color:#000}
+#crit,#scn{flex:1;overflow:auto;padding:12px 26px}
+.cr{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);transition:opacity .3s}.cr.off{opacity:.4}.cr span{flex:1;font-size:13.5px}.cr.cu{flex-wrap:wrap}
+.cr input[type=number],.cr select,.cr .tx{height:32px;border:0;border-radius:7px;background:var(--p2);text-align:center;outline:0;padding:0 8px}.cr input[type=number]{width:62px;font-family:"Geist Mono",monospace}.cr .tx{text-align:left;margin-top:8px;padding:0 12px}
+.cr input:focus,.cr select:focus{box-shadow:0 0 0 1px #fff}
+.df{padding:18px 26px 26px;border-top:1px solid var(--line)}.df .btn{width:100%;height:42px;justify-content:center}
+.sw{display:inline-flex;align-items:center;cursor:pointer;user-select:none}.sw input{display:none}
+.sw i{width:32px;height:18px;border-radius:9px;background:#2a2a28;position:relative;transition:background .3s;flex:none}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#8b8b86;transition:transform .4s var(--ease),background .3s}
+.sw input:checked+i{background:#fff}.sw input:checked+i::after{transform:translateX(14px);background:#000}
+#toasts{position:fixed;right:24px;bottom:24px;display:grid;gap:10px;z-index:100}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:#fff;color:#000;font-weight:550;animation:tin .6s var(--ease)}.toast.out{opacity:0;transform:translateY(8px);transition:.3s}@keyframes tin{from{opacity:0;transform:translateY(16px) scale(.96)}}
+.crm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.crm select,.crm input{height:30px;border:0;border-radius:7px;background:var(--p2);padding:0 10px;outline:0;color-scheme:dark}.crm input[type=text]{flex:1;min-width:140px}
+@media(max-width:900px){.fg{grid-template-columns:repeat(2,1fr)}.hg{grid-template-columns:1fr}.dg{grid-template-columns:repeat(2,1fr);padding-left:12px}.wrap{padding:0 16px}.hd .btn span,.live{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}.lbl span,.dist>div,.fc{transform:none;opacity:1}}
 </style>
 </head>
 <body>
@@ -151,140 +144,166 @@ aside.on{transform:none}
 <symbol id="i-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
 <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
 <symbol id="i-sword" viewBox="0 0 24 24"><path d="M18 6 10 14M14 6h4v4M8.5 11.5l4 4M10.5 13.5l-4 4"/></symbol>
 </svg>
 
 <header>
   <div class="wrap hd">
-    <div class="brand">
-      <svg width="34" height="34" viewBox="0 0 34 34"><rect width="34" height="34" rx="9" fill="#2F6BFF"/><g transform="translate(5 5)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 10 14M14 6h4v4M8.5 11.5l4 4M10.5 13.5l-4 4"/></g></svg>
-      <div><b>SideQuest</b><span>Dead game scanner</span></div>
-    </div>
-    <div class="pill"><i class="dot" id="nd"></i><span id="nt">Discord alerts</span></div>
-    <button class="btn ghost" id="bCrit"><svg class="ic"><use href="#i-sliders"/></svg><span>Criteria</span></button>
-    <button class="btn ghost" id="bExp"><svg class="ic"><use href="#i-down"/></svg><span>Export Excel</span></button>
+    <div class="brand"><i><svg class="ic"><use href="#i-sword"/></svg></i>SideQuest<small>dead game scanner</small></div>
+    <div class="live"><i id="nd"></i><span id="nt">webhook</span></div>
+    <button class="btn ghost" id="bFil"><svg class="ic"><use href="#i-sliders"/></svg><span>Filters</span><b class="badge" id="fb">0</b></button>
+    <button class="btn ghost" id="bCrit"><svg class="ic"><use href="#i-plus"/></svg><span>Settings</span></button>
+    <button class="btn ghost" id="bExp"><svg class="ic"><use href="#i-down"/></svg><span>Export</span></button>
     <button class="btn pri" id="bScan"><svg class="ic"><use href="#i-play"/></svg><span>Scan Steam</span></button>
   </div>
   <div id="bar"><i></i></div>
 </header>
-
 <main class="wrap">
-  <section class="stats" id="stats">
-    <div class="stat hero"><strong data-k="dead">0</strong><span>Dead games</span></div>
-    <div class="stat"><strong data-k="new_dead_24h">0</strong><span>Found in the last 24h</span></div>
-    <div class="stat"><strong data-k="alive">0</strong><span>Still alive</span></div>
-    <div class="stat"><strong data-k="total">0</strong><span>Games tracked</span></div>
-  </section>
-  <div class="scan" id="scan"><div><p id="scanTxt"></p></div></div>
-
-  <div class="tb">
-    <div class="seg" id="seg"><i class="thumb" id="thumb"></i>
-      <button data-f="dead" class="on">Dead</button><button data-f="dying">Dying</button><button data-f="alive">Alive</button><button data-f="all">All</button>
+  <section class="hero" id="hero">
+    <div class="hg">
+      <div><div class="lbl"><span>Dead games, confirmed on Steam</span></div><div id="big">0</div></div>
+      <div class="kvs">
+        <div class="kv">Found in 24h<b id="k1">0</b></div><div class="kv">Tracked<b id="k2">0</b></div><div class="kv">Still alive<b id="k3">0</b></div>
+      </div>
     </div>
-    <label class="search"><svg class="ic"><use href="#i-search"/></svg><input id="q" placeholder="Search a game" autocomplete="off"></label>
-    <label class="sw"><input type="checkbox" id="cc"><i></i><em>Has contact</em></label>
+    <div class="dist" id="dist"><div class="s0" style="--i:0"></div><div class="s1" style="--i:1"></div><div class="s2" style="--i:2"></div><div class="s3" style="--i:3"></div></div>
+    <div class="leg" id="leg"></div>
+    <div class="scanl" id="scan"><div><p id="scanTxt"></p></div></div>
+  </section>
+  <div class="tb">
+    <div class="seg" id="seg"><i class="thumb" id="thumb"></i><button data-f="dead" class="on">Dead</button><button data-f="dying">Dying</button><button data-f="alive">Alive</button><button data-f="all">All</button></div>
+    <label class="search"><svg class="ic"><use href="#i-search"/></svg><input id="q" placeholder="Search a game" autocomplete="off"><kbd>/</kbd></label>
     <span id="count"></span>
   </div>
-
-  <div class="tbl intro" id="tbl">
-    <table>
-      <thead><tr><th>Game</th><th class="num">Players</th><th class="num">Reviews</th><th>Score</th><th>Contact</th><th>Status</th><th></th></tr></thead>
-      <tbody id="tb"></tbody>
-    </table>
-  </div>
+  <div class="fp" id="fp"><div><div class="fg" id="fg"></div><div class="ff"><span id="fn">No filter active</span><button id="fr">Reset all</button></div></div></div>
+  <div class="tbl intro" id="tbl"><table>
+    <thead><tr><th></th><th>Game</th><th class="num">Players</th><th class="num">Reviews</th><th>Score</th><th>Contact</th><th>Status</th><th></th></tr></thead>
+    <tbody id="tb"></tbody></table></div>
   <div class="pg"><span id="pgInfo"></span><button id="pp" aria-label="Previous page"><svg class="ic"><use href="#i-l"/></svg></button><button id="pn" aria-label="Next page"><svg class="ic"><use href="#i-r"/></svg></button></div>
 </main>
-
 <div class="ov" id="ov"></div>
 <aside id="dr" aria-label="Score criteria">
-  <div class="dh"><div><h2>Score criteria</h2><p>Switch criteria on or off. Scores are rescaled to 100 and the Excel export follows the same setup.</p></div><button class="x" id="dx" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
-  <div id="crit"></div>
+  <div class="dh"><div><h2>Settings</h2><p>Everything the scanner checks and scores. Score changes apply now, scanner changes from the next scan.</p></div><button class="x" id="dx" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div class="tabs"><button class="on" data-t="crit">Score</button><button data-t="scn">Scanner</button></div>
+  <div id="crit"></div><div id="scn" hidden></div>
   <div class="df">
-    <div class="row"><span>Export only scores from</span><input type="number" id="eMin" min="0" max="100" value="0"></div>
+    
     <button class="btn pri" id="bSave">Save and rescore</button>
   </div>
 </aside>
 <div id="toasts"></div>
 
 <script>
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=n=>n==null?'—':Number(n).toLocaleString('en');
 const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
 const J=(u,o)=>fetch(u,o).then(r=>r.json());
 let filter='dead',page=1,PER=25,search='',first=true,scanning=false,timer;
-
-function toast(msg){const t=document.createElement('div');t.className='toast';t.innerHTML=ic('ok')+`<span>${esc(msg)}</span>`;$('#toasts').append(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),320)},2800)}
-function countTo(el,to){const from=+el.dataset.v||0;el.dataset.v=to;const t0=performance.now();(function f(t){const p=Math.min((t-t0)/800,1),e=1-Math.pow(1-p,3);el.textContent=nf(Math.round(from+(to-from)*e));if(p<1)requestAnimationFrame(f)})(t0)}
+function toast(m){const t=document.createElement('div');t.className='toast';t.innerHTML=ic('ok')+`<span>${esc(m)}</span>`;$('#toasts').append(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),320)},2800)}
+function countTo(el,to,d=1200){const from=+el.dataset.v||0;el.dataset.v=to;const t0=performance.now();(function f(t){const p=Math.min((t-t0)/d,1),e=1-Math.pow(1-p,4);el.textContent=nf(Math.round(from+(to-from)*e));if(p<1)requestAnimationFrame(f)})(t0)}
 function thumb(){const b=$('#seg .on');$('#thumb').style.cssText=`width:${b.offsetWidth}px;transform:translateX(${b.offsetLeft}px)`}
+const ago=ts=>{if(!ts)return'never';const d=Math.floor((Date.now()/1000-ts)/86400);return d<1?'today':d<60?d+' days ago':d<730?Math.floor(d/30)+' months ago':Math.floor(d/365)+' years ago'};
+// every filter the backend supports; each one can be switched on or off
+const FL=[{id:'score',l:'Score',f:[['min_score','min']]},{id:'reviews',l:'Reviews',f:[['reviews_min','min'],['reviews_max','max']]},{id:'players',l:'Players now',f:[['players_min','min'],['players_max','max']]},{id:'inactive',l:'Inactive for (days)',f:[['inactive_min','min']]},{id:'year',l:'Release year',f:[['year_min','from'],['year_max','to']]},{id:'price',l:'Max price ($)',f:[['price_max','max']]},{id:'streak',l:'Scans at 0 players',f:[['streak_min','min']]},{id:'dev',l:'Developer or publisher',f:[['dev','contains','text']]},{id:'outreach',l:'Outreach status',f:[['outreach','new, contacted…','text']]},
+{id:'has_email',l:'Has an email',b:1},{id:'has_site',l:'Has a website or support page',b:1},{id:'free_only',l:'Free to play only',b:1},{id:'early',l:'Early Access only',b:1},{id:'self_pub',l:'Self-published (same name)',b:1}];
+const F={};FL.forEach(f=>F[f.id]={on:false,v:{}});
+function qs(extra={}){const p=new URLSearchParams(extra);if(search)p.set('search',search);
+  FL.forEach(f=>{if(!F[f.id].on)return;if(f.b)p.set(f.id,'1');else f.f.forEach(([k])=>{const v=F[f.id].v[k];if(v!==undefined&&v!=='')p.set(k,v)})});return p}
+function activeN(){return FL.filter(f=>F[f.id].on&&(f.b||f.f.some(([k])=>(F[f.id].v[k]??'')!==''))).length}
+function drawFilters(){$('#fg').innerHTML=FL.map((f,i)=>`<div class="fc" data-id="${f.id}" style="--i:${i}"><div class="fh"><span>${f.l}</span><label class="sw"><input type="checkbox" data-on="${f.id}"><i></i></label></div>${f.b?'':`<div class="fb">${f.f.map(([k,ph,t])=>`<input data-k="${k}" type="${t||'number'}" step="any" placeholder="${ph}">`).join('')}</div>`}</div>`).join('')}
+function syncFilters(){const n=activeN();$('#fb').textContent=n;$('#fb').classList.toggle('on',n>0);$('#fn').textContent=n?`${n} filter${n>1?'s':''} active`:'No filter active';$$('.fc').forEach(c=>c.classList.toggle('act',F[c.dataset.id].on))}
+$('#fg').addEventListener('change',e=>{const id=e.target.dataset.on;if(id){F[id].on=e.target.checked;syncFilters();page=1;loadGames()}});
+$('#fg').addEventListener('input',e=>{const k=e.target.dataset.k;if(!k)return;const id=e.target.closest('.fc').dataset.id;F[id].v[k]=e.target.value;
+  if(!F[id].on){F[id].on=true;e.target.closest('.fc').querySelector('[data-on]').checked=true}syncFilters();clearTimeout(timer);timer=setTimeout(()=>{page=1;loadGames()},300)});
+$('#fr').onclick=()=>{FL.forEach(f=>F[f.id]={on:false,v:{}});drawFilters();syncFilters();page=1;loadGames()};
+$('#bFil').onclick=()=>$('#fp').classList.toggle('on');
 
-async function loadStats(){const s=await J('/api/stats');$$('#stats strong').forEach(e=>countTo(e,s[e.dataset.k]||0))}
+async function loadStats(){
+  const [s,dy,un,fu]=await Promise.all([J('/api/stats'),J('/api/games?status=dying&per_page=1'),J('/api/games?status=unknown&per_page=1'),J('/api/funnel')]);
+  countTo($('#big'),s.dead||0,1600);countTo($('#k1'),s.new_dead_24h||0);countTo($('#k2'),s.total||0);countTo($('#k3'),s.alive||0);
+  const c=[s.dead||0,dy.total||0,s.alive||0,un.total||0],sum=c.reduce((a,b)=>a+b,0)||1,L=['Dead','Dying','Alive','Unknown'];
+  $$('#dist>div').forEach((d,i)=>d.style.flexBasis=(c[i]/sum*100)+'%');$('#dist').classList.add('go');
+  $('#leg').innerHTML=c.map((v,i)=>`<span><i class="${'s'+i}" style="${i==1?'background:repeating-linear-gradient(135deg,#fff 0 2px,transparent 2px 4px)':i==0?'background:#fff':i==2?'background:#2A2A28':'box-shadow:inset 0 0 0 1px #4B4B48'}"></i>${L[i]} <b>${nf(v)}</b></span>`).join('')+`<span>Pipeline <b>${fu.contacted||0} contacted · ${fu.replied||0} replied · ${fu.accepted||0} accepted</b></span>`}
 async function loadGames(){
-  const p=new URLSearchParams({page,per_page:PER,sort:'score'});
-  if(filter!=='all')p.set('status',filter);if(search)p.set('search',search);if($('#cc').checked)p.set('has_contact','true');
-  if(first)$('#tb').innerHTML=Array.from({length:8},()=>`<tr class="sk"><td><div style="width:60%"></div></td><td><div></div></td><td><div></div></td><td><div></div></td><td><div></div></td><td><div></div></td><td></td></tr>`).join('');
-  const d=await J('/api/games?'+p);render(d.games);
-  $('#count').textContent=nf(d.total)+' games';
-  const pages=Math.max(1,Math.ceil(d.total/PER));$('#pgInfo').textContent=`Page ${page} of ${pages}`;$('#pp').disabled=page<=1;$('#pn').disabled=page>=pages;
-}
-function ring(s){const c=94.25,col=s>=60?'var(--blue2)':s>=30?'var(--blue)':'var(--mut)';
-  return `<svg class="ring" viewBox="0 0 40 40"><circle class="rt" cx="20" cy="20" r="15"/><circle class="rv" cx="20" cy="20" r="15" stroke="${col}" stroke-dasharray="${c}" style="stroke-dashoffset:${c}" data-o="${c*(1-s/100)}" transform="rotate(-90 20 20)"/><text x="20" y="24.2">${s}</text></svg>`}
+  if(first)$('#tb').innerHTML=Array.from({length:8},()=>`<tr class="sk">${'<td><i></i></td>'.repeat(8)}</tr>`).join('');
+  const d=await J('/api/games?'+qs({page,per_page:PER,sort:'score',...(filter!=='all'?{status:filter}:{})}));render(d.games);
+  $('#count').textContent=nf(d.total)+' results';const pages=Math.max(1,Math.ceil(d.total/PER));
+  $('#pgInfo').textContent=`${page} / ${pages}`;$('#pp').disabled=page<=1;$('#pn').disabled=page>=pages}
 function render(games){
   const tb=$('#tb');
-  if(!games.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><svg class="ic"><use href="#i-sword"/></svg><b>No games here yet</b>Run a scan, or loosen the filters above.</div></td></tr>`;return}
+  if(!games.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><b>Nothing matches</b>Loosen a filter, or run a scan.</div></td></tr>`;return}
   tb.innerHTML=games.map((g,i)=>{
-    const icon=g.icon?`<img class="gi" src="https://cdn.discordapp.com/app-icons/${g.discord_id}/${g.icon}.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'gi',textContent:'${esc((g.name||'?')[0]).replace(/'/g,'')}'}))">`:`<div class="gi">${esc((g.name||'?')[0])}</div>`;
-    const c=g.contact||'',cl=!c?'<span class="zero">—</span>':c.includes('@')?`<a class="ci" href="mailto:${esc(c)}" title="${esc(c)}">${ic('mail')}</a>`:`<a class="ci" href="${esc(c)}" target="_blank" rel="noopener" title="${esc(c)}">${ic('globe')}</a>`;
-    return `<tr style="--i:${i}"><td><div class="game">${icon}<div style="min-width:0"><div class="gn">${esc(g.name)}</div><div class="gs">${esc(g.developers||'Unknown developer')}</div></div></div></td>
-    <td class="num ${g.current_players?'':'zero'}">${nf(g.current_players)}</td><td class="num ${g.total_reviews?'':'zero'}">${nf(g.total_reviews)}</td>
-    <td>${ring(g.score||0)}</td><td>${cl}</td><td><span class="bd ${g.status}">${g.status[0].toUpperCase()+g.status.slice(1)}</span></td>
-    <td><div class="act">${g.status!=='dead'?`<button class="lk mk" data-dead="${g.discord_id}">Mark dead</button>`:''}${g.steam_appid?`<a class="lk" href="https://store.steampowered.com/app/${g.steam_appid}" target="_blank" rel="noopener">Steam ${ic('out')}</a>`:''}<a class="lk" href="https://discord.com/developers/applications/${g.discord_id}" target="_blank" rel="noopener">Claim ${ic('out')}</a></div></td></tr>`}).join('');
-  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.rv').forEach(e=>e.style.strokeDashoffset=e.dataset.o)));
-  const t=$('#tbl');if(first){first=false;setTimeout(()=>t.classList.remove('intro'),1400)}else{t.classList.remove('swap');void t.offsetWidth;t.classList.add('swap')}
-}
-
-// scan state
-function setScan(s){
-  scanning=!!s.is_running;const b=$('#bScan');
-  b.className='btn '+(scanning?'stop':'pri');b.innerHTML=`${ic(scanning?'stop':'play')}<span>${scanning?'Stop scan':'Scan Steam'}</span>`;
-  $('#bar').classList.toggle('run',scanning);$('#bar i').style.width=(scanning?s.pct||0:0)+'%';
-  $('#scan').classList.toggle('on',scanning);
-  if(scanning)$('#scanTxt').innerHTML=`Scanning <b>${esc(s.current_game||'Steam library')}</b> — ${nf(s.progress)} of ${nf(s.total)} checked, ${nf(s.dead_count)} dead found`;
-}
-function connect(){
-  const ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');
-  ws.onmessage=e=>{const m=JSON.parse(e.data);
-    if(m.type==='scan_status'||m.type==='scan_progress')setScan(m);
-    if(m.type==='scan_started')setScan({is_running:true,pct:0});
-    if(m.type==='scan_complete'){setScan({is_running:false});toast(m.status==='stopped'?'Scan stopped':`Scan complete: ${m.new_dead} new dead games`);loadStats();loadGames()}
-    if(m.type==='scan_error')toast('Scan failed: '+m.error);
-    if(m.type==='game_updated'){loadStats();loadGames()}};
-  ws.onclose=()=>setTimeout(connect,2000);
-}
-
+    const L=esc((g.name||'?')[0]).replace(/'/g,''),icon=g.icon?`<img class="gi" src="https://cdn.discordapp.com/app-icons/${g.discord_id}/${g.icon}.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'gi',textContent:'${L}'}))">`:`<div class="gi">${L}</div>`;
+    const c=g.contact||'',em=g.email||(c.includes('@')&&!/^https?:/.test(c)?c:''),web=g.website||(!em&&/^https?:/.test(c)?c:''),cl=(em||web)?(em?`<a class="ci" href="mailto:${esc(em)}" title="${esc(em)}">${ic('mail')}</a>`:'')+(web?`<a class="ci" href="${esc(web)}" target="_blank" rel="noopener" title="${esc(web)}">${ic('globe')}</a>`:''):'<span class="z">—</span>';
+    const sc=g.score||0,st=g.status,rv=g.total_reviews,dt=g.last_checked?new Date(g.last_checked+'Z').toLocaleString('en',{dateStyle:'medium',timeStyle:'short'}):'never',
+    price=g.is_free?'Free':g.price!=null?'$'+(g.price/100).toFixed(2):'—';
+    return `<tr class="r" style="--i:${i}"><td class="rk">${String((page-1)*PER+i+1).padStart(2,'0')}</td>
+    <td><div class="game">${icon}<div style="min-width:0"><div class="gn">${esc(g.name)}</div><div class="gs">${esc(g.developers||'app '+(g.steam_appid||'?'))}</div></div></div></td>
+    <td class="num ${g.current_players?'':'z'}">${nf(g.current_players)}</td><td class="num ${rv?'':'z'}" ${rv==null?'title="Not fetched yet: run a scan with “Fetch reviews for living games” on"':''}>${nf(rv)}</td>
+    <td><div class="sc"><div><i data-w="${sc}"></i></div>${sc}</div></td><td>${cl}</td><td><span class="st ${st}">${st[0].toUpperCase()+st.slice(1)}</span></td>
+    <td><div class="act">${st!=='dead'?`<button class="lk mk" data-dead="${g.discord_id}">Mark dead</button>`:''}${g.steam_appid?`<a class="lk" href="https://store.steampowered.com/app/${g.steam_appid}" target="_blank" rel="noopener">Steam ${ic('out')}</a>`:''}<a class="lk" href="https://discord.com/developers/applications/${g.discord_id}" target="_blank" rel="noopener">Claim ${ic('out')}</a></div></td></tr>
+    <tr class="dt"><td colspan="8"><div class="dx"><div><div class="dg">
+      <div><small>Developer</small><span>${esc(g.developers||'—')}</span></div><div><small>Publisher</small><span>${esc(g.publishers||'—')}</span></div><div><small>Released</small><span>${esc(g.release_date||'—')}</span></div><div><small>Price</small><span>${price}${g.early_access?' · Early Access':''}</span></div><div><small>Scans at 0 players</small><span>${g.zero_streak||0}</span></div>
+      <div><small>Last review</small><span>${ago(g.last_review_ts)}</span></div><div><small>Last news</small><span>${ago(g.last_news_ts)}</span></div><div><small>Contact</small><span>${esc(c||'—')}</span></div><div><small>Last checked</small><span>${dt}</span></div><div><small>Steam app</small><span>${g.steam_appid||'—'}</span></div><div><small>Dead games by this dev</small><span>${g.dev_n||0}</span></div><div><small>Pinned</small><span>${g.pinned?'yes':'no'}</span></div>
+      <div style="grid-column:span 3"><small>Score breakdown</small><span>${(g.bd||[]).map(([l,v])=>l.split(' (')[0]+' +'+v).join('   ')||'—'}</span></div>
+      <div class="crm" style="grid-column:1/-1" data-did="${g.discord_id}" data-name="${esc(g.name)}" data-dev="${esc(g.developers||'')}" data-mail="${esc(em)}"><select data-oc>${['new','contacted','replied','accepted','declined','no_answer'].map(o=>`<option ${o===(g.outreach||'new')?'selected':''}>${o}</option>`).join('')}</select><input type="date" data-fu value="${esc(g.follow_up||'')}"><input type="text" data-nt placeholder="Note" value="${esc(g.outreach_note||'')}"><button class="lk" data-save>Save</button><button class="lk" data-cp="en">Copy EN</button><button class="lk" data-cp="fr">Copy FR</button>${em?'<button class="lk" data-mail>Open mail</button>':''}</div>
+    </div></div></div></td></tr>`}).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.sc i').forEach(e=>e.style.width=e.dataset.w+'%')));
+  const t=$('#tbl');if(first){first=false;setTimeout(()=>t.classList.remove('intro'),2200)}else{t.classList.remove('swap');void t.offsetWidth;t.classList.add('swap')}}
+function setScan(s){scanning=!!s.is_running;const b=$('#bScan');b.className='btn '+(scanning?'stop':'pri');b.innerHTML=`${ic(scanning?'stop':'play')}<span>${scanning?'Stop scan':'Scan Steam'}</span>`;
+  $('#bar').classList.toggle('run',scanning);$('#bar i').style.width=(scanning?s.pct||0:0)+'%';$('#scan').classList.toggle('on',scanning);
+  if(scanning)$('#scanTxt').innerHTML=`<b>${s.pct||0}%</b>  ${nf(s.progress)} / ${nf(s.total)} checked   ${nf(s.dead_count)} dead   ${nf(s.failed||0)} failed   ${esc(s.current_game||'')}`}
+function connect(){const ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');
+  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='scan_status'||m.type==='scan_progress')setScan(m);if(m.type==='scan_started')setScan({is_running:true,pct:0});
+    if(m.type==='scan_complete'){setScan({is_running:false});toast(m.status==='stopped'?'Scan stopped':`Scan complete, ${m.new_dead} new dead games`);loadStats();loadGames()}
+    if(m.type==='scan_error')toast('Scan failed: '+m.error);if(m.type==='game_updated'){loadStats();loadGames()}};ws.onclose=()=>setTimeout(connect,2000)}
 // criteria drawer
 const drawer=on=>{$('#dr').classList.toggle('on',on);$('#ov').classList.toggle('on',on)};
+const FD={total_reviews:'Reviews',current_players:'Players now',price:'Price ($)',inactive_days:'Days inactive',zero_streak:'Scans at 0 players',release_year:'Release year',is_free:'Free (1 or 0)',early_access:'Early Access (1 or 0)'};
+const cuRow=(k,v)=>`<div class="cr cu ${v.enabled?'':'off'}" data-c="${k}"><label class="sw"><input type="checkbox" data-k="${k}" ${v.enabled?'checked':''}><i></i></label><select data-f>${Object.entries(FD).map(([a,b])=>`<option value="${a}" ${a===v.field?'selected':''}>${b}</option>`).join('')}</select><select data-o>${['>=','<=','=='].map(o=>`<option ${o===v.op?'selected':''}>${o}</option>`).join('')}</select><input type="number" step="any" data-v value="${v.value}" aria-label="Value"><input type="number" min="0" max="100" data-p value="${v.points}" ${v.enabled?'':'disabled'} aria-label="Points"><button class="x" data-del aria-label="Remove rule">${ic('x')}</button></div>`;
 async function loadCrit(){const c=await J('/api/criteria');
-  $('#crit').innerHTML=Object.entries(c).map(([k,v])=>`<div class="cr ${v.enabled?'':'off'}"><label class="sw"><input type="checkbox" data-k="${k}" ${v.enabled?'checked':''}><i></i></label><span>${esc(v.label)}</span><input type="number" min="0" max="100" data-p="${k}" value="${v.points}" ${v.enabled?'':'disabled'} aria-label="Points"></div>`).join('')}
+  $('#crit').innerHTML=Object.entries(c).map(([k,v])=>v.custom?cuRow(k,v):`<div class="cr ${v.enabled?'':'off'}"><label class="sw"><input type="checkbox" data-k="${k}" ${v.enabled?'checked':''}><i></i></label><span>${esc(v.label)}</span><input type="number" min="0" max="100" data-p="${k}" value="${v.points}" ${v.enabled?'':'disabled'} aria-label="Points"></div>`).join('')+`<button class="btn ghost" id="bAdd" style="margin-top:16px">${ic('plus')}Add a rule</button>`}
+const SC=[['fetch_reviews_all','Fetch reviews for living games too (slower, fills the Reviews column)','t'],['min_zero_streak','Dead only after N scans at 0 players','n'],['notify_max_per_scan','Max Discord alerts per scan (best scores first)','n'],['offer_price','Offer price shown in message templates (e.g. 100 €)','s'],['max_players','Dead up to this many players now','n'],['max_reviews','Dead: max reviews','n'],['dying_max_reviews','Dying: max reviews','n'],['use_age','Require a minimum age','t'],['min_age_days','Minimum age (days)','n'],['use_inactivity','Require no recent activity','t'],['min_inactive_days','No review or news for (days)','n'],['use_news','Use Steam news to measure activity','t'],['recheck_alive_days','Re-check living games after (days)','n'],['notify_min_score','Discord alert from score','n'],['notify_require_contact','Alert only if a contact exists','t'],['exclude_publishers','Skip these developers or publishers (comma separated)','s']];
+async function loadScn(){const c=await J('/api/scanner');
+  $('#scn').innerHTML=SC.map(([k,l,t])=>t==='t'?`<div class="cr"><label class="sw"><input type="checkbox" data-s="${k}" ${c[k]?'checked':''}><i></i></label><span>${l}</span></div>`:t==='n'?`<div class="cr"><span>${l}</span><input type="number" min="0" data-s="${k}" value="${c[k]}"></div>`:`<div class="cr" style="flex-direction:column;align-items:stretch"><span>${l}</span><input type="text" class="tx" data-s="${k}" value="${esc(c[k])}" placeholder="${k==='offer_price'?'100 €':'Ubisoft, Electronic Arts'}"></div>`).join('')}
 $('#crit').addEventListener('change',e=>{const k=e.target.dataset.k;if(!k)return;const r=e.target.closest('.cr');r.classList.toggle('off',!e.target.checked);r.querySelector('[data-p]').disabled=!e.target.checked});
-$('#bSave').onclick=async()=>{const body={};$$('#crit [data-k]').forEach(el=>body[el.dataset.k]={enabled:el.checked,points:+$(`[data-p="${el.dataset.k}"]`).value});
-  const r=await J('/api/criteria',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  drawer(false);toast(`Scores updated for ${nf(r.recomputed)} games`);loadGames()};
+const put=(u,b)=>J(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+async function saveCrit(){const body={};$$('#crit .cr').forEach(r=>{const c=r.querySelector('[data-k]'),o={enabled:c.checked,points:+r.querySelector('[data-p]').value};
+  if(r.dataset.c)Object.assign(o,{field:r.querySelector('[data-f]').value,op:r.querySelector('[data-o]').value,value:+r.querySelector('[data-v]').value,label:''});body[c.dataset.k]=o});
+  const r=await put('/api/criteria',body);drawer(false);toast(`Scores updated for ${nf(r.recomputed)} games`);loadGames();loadCrit()}
+async function saveScn(){const b={};$$('#scn [data-s]').forEach(e=>b[e.dataset.s]=e.type==='checkbox'?e.checked:e.type==='number'?+e.value:e.value);
+  await put('/api/scanner',b);drawer(false);toast('Scanner settings saved, they apply from the next scan')}
+let tab='crit';
+$('.tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.t;$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));$('#crit').hidden=tab!=='crit';$('#scn').hidden=tab!=='scn';$('#bSave').textContent=tab==='crit'?'Save and rescore':'Save scanner settings'};
+$('#bSave').onclick=()=>tab==='crit'?saveCrit():saveScn();
+$('#crit').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d)d.closest('.cr').remove();const a=e.target.closest('#bAdd');if(a)a.insertAdjacentHTML('beforebegin',cuRow('custom_'+Date.now(),{enabled:true,field:'total_reviews',op:'<=',value:0,points:10}))});
 $('#bCrit').onclick=()=>drawer(true);$('#dx').onclick=$('#ov').onclick=()=>drawer(false);
 addEventListener('keydown',e=>{if(e.key==='Escape')drawer(false);if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();$('#q').focus()}});
 
+
+const put2=(u,m,b)=>fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+let OFFER='';
+const TPL={en:(g,p)=>({s:`Placement on the ${g.name} Steam page`,b:`Hi ${g.dev||'there'},\n\nI noticed ${g.name} hasn't been updated in a while. I run SideQuest, and I'm looking to rent a small placement (a Discord link) on Steam pages that are no longer active. I'd pay ${p||'a fair price'} for it, and you keep full control of your page.\n\nWould you be open to it?\n\nBest regards,`}),
+fr:(g,p)=>({s:`Emplacement sur la page Steam de ${g.name}`,b:`Bonjour ${g.dev||''},\n\nJ'ai vu que ${g.name} n'a plus été mis à jour depuis un moment. Je dirige SideQuest et je cherche à louer un petit emplacement (un lien Discord) sur des pages Steam qui ne sont plus actives. Je serais prêt à payer ${p||'un prix correct'} pour cela, et vous gardez le contrôle total de votre page.\n\nSeriez-vous ouvert à cette idée ?\n\nCordialement,`})};
+function crmClick(e){const c=e.target.closest('.crm');if(!c)return false;const g={name:c.dataset.name,dev:c.dataset.dev};
+  if(e.target.closest('[data-save]'))put2(`/api/games/${c.dataset.did}/outreach`,'PATCH',{status:c.querySelector('[data-oc]').value,follow_up:c.querySelector('[data-fu]').value,note:c.querySelector('[data-nt]').value}).then(()=>{toast('Outreach saved');loadStats()});
+  const cp=e.target.closest('[data-cp]');if(cp){const t=TPL[cp.dataset.cp](g,OFFER);navigator.clipboard.writeText(t.s+'\n\n'+t.b);toast('Message copied')}
+  if(e.target.closest('[data-mail]')){const t=TPL.en(g,OFFER);location.href=`mailto:${c.dataset.mail}?subject=${encodeURIComponent(t.s)}&body=${encodeURIComponent(t.b)}`}
+  return true}
 // actions
 $('#bScan').onclick=()=>fetch(scanning?'/api/scan/stop':'/api/scan/start',{method:'POST'});
-$('#bExp').onclick=()=>{const p=new URLSearchParams({status:(filter==='dead'||filter==='dying')?filter:'dead,dying',min_score:$('#eMin').value||0,has_contact:$('#cc').checked});location.href='/api/export.xlsx?'+p;toast('Your Excel file is downloading')};
+$('#bExp').onclick=()=>{location.href='/api/export.xlsx?'+qs({status:(filter==='dead'||filter==='dying')?filter:'dead,dying'});toast('Your Excel file is downloading')};
 $('#seg').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('#seg button').forEach(x=>x.classList.toggle('on',x===b));filter=b.dataset.f;page=1;thumb();loadGames()};
 $('#q').oninput=e=>{clearTimeout(timer);timer=setTimeout(()=>{search=e.target.value.trim();page=1;loadGames()},250)};
-$('#cc').onchange=()=>{page=1;loadGames()};
 $('#pp').onclick=()=>{page--;loadGames()};$('#pn').onclick=()=>{page++;loadGames()};
-$('#tb').onclick=async e=>{const b=e.target.closest('[data-dead]');if(!b)return;
-  await fetch(`/api/games/${b.dataset.dead}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'dead'})});toast('Marked as dead')};
-
-addEventListener('load',()=>{thumb();loadStats();loadGames();loadCrit();connect();
-  J('/api/notifier/status').then(n=>{$('#nd').classList.toggle('on',n.connected);$('#nt').textContent=n.connected?'Discord alerts on':'Discord alerts off'}).catch(()=>{})});
+$('#tb').onclick=async e=>{if(crmClick(e))return;const b=e.target.closest('[data-dead]');
+  if(b){await fetch(`/api/games/${b.dataset.dead}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'dead'})});await put2(`/api/games/${b.dataset.dead}/pin`,'POST',{pinned:true});toast('Marked as dead and pinned');return}
+  if(e.target.closest('a'))return;const r=e.target.closest('tr.r');if(r)r.classList.toggle('open')};
+$('#hero').addEventListener('mousemove',e=>{const r=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty('--mx',(e.clientX-r.left)+'px');e.currentTarget.style.setProperty('--my',(e.clientY-r.top)+'px')});
+addEventListener('load',()=>{J('/api/scanner').then(c=>OFFER=c.offer_price||'');drawFilters();thumb();loadStats();loadGames();loadCrit();loadScn();connect();
+  J('/api/notifier/status').then(n=>{$('#nd').classList.toggle('on',n.connected);$('#nt').textContent=n.connected?'webhook live':'webhook off'}).catch(()=>{})});
 addEventListener('resize',thumb);
 </script>
 </body>
