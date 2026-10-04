@@ -1,5 +1,5 @@
 """scoring.py — critères du score, activables/pondérables. Source unique (scanner, API, Excel)."""
-import time
+import time, re
 
 CRITERIA = [  # (clé, label, points par défaut)
     ("email",           "Email de contact",                               30),
@@ -14,6 +14,12 @@ CRITERIA = [  # (clé, label, points par défaut)
 LABELS = {k: l for k, l, _ in CRITERIA}
 
 
+FIELDS = {"total_reviews": "Reviews", "current_players": "Players now", "price": "Price ($)",
+          "inactive_days": "Days inactive", "zero_streak": "Scans at 0 players",
+          "release_year": "Release year", "is_free": "Free (1 or 0)", "early_access": "Early Access (1 or 0)"}
+OPS = (">=", "<=", "==")
+
+
 def merge(saved: dict) -> dict:
     out = {}
     for k, label, pts in CRITERIA:
@@ -23,6 +29,18 @@ def merge(saved: dict) -> dict:
         except (TypeError, ValueError):
             p = pts
         out[k] = {"label": label, "enabled": bool(v.get("enabled", True)), "points": p}
+    for k, v in (saved or {}).items():          # règles ajoutées par l'utilisateur
+        if not (k.startswith("custom_") and isinstance(v, dict)):
+            continue
+        try:
+            fld, op, val = v.get("field"), v.get("op"), float(v.get("value"))
+            p = max(0, min(100, int(v.get("points", 0))))
+        except (TypeError, ValueError):
+            continue
+        if fld in FIELDS and op in OPS:
+            out[k[:40]] = {"label": (v.get("label") or f"{FIELDS[fld]} {op} {val:g}")[:80],
+                           "enabled": bool(v.get("enabled", True)), "points": p,
+                           "custom": True, "field": fld, "op": op, "value": val}
     return out
 
 
@@ -42,7 +60,7 @@ def _fractions(row: dict) -> dict:
     return {
         "email": 1.0 if email else 0.0,
         "website": 1.0 if site else 0.0,
-        "self_pub": 1.0 if devs & pubs else 0.0,
+        "self_pub": 1.0 if (row.get("self_pub") if row.get("self_pub") is not None else devs & pubs) else 0.0,
         "inactive": 1.0 if (ina is None or ina >= 730) else (0.5 if ina >= 365 else 0.0),
         "no_reviews": 1.0 if row.get("total_reviews") == 0 else 0.0,
         "cheap": 1.0 if (row.get("is_free") or (price is not None and price <= 500)) else 0.0,
@@ -51,10 +69,32 @@ def _fractions(row: dict) -> dict:
     }
 
 
+def _val(row: dict, f: str):
+    if f == "inactive_days":
+        return inactive_days(row)
+    if f == "price":
+        p = row.get("price")
+        return 0 if row.get("is_free") else (None if p is None else p / 100)
+    if f == "release_year":
+        m = re.search(r"(19|20)\d{2}", row.get("release_date") or "")
+        return int(m.group()) if m else None
+    v = row.get(f)
+    return None if v is None else float(v)
+
+
+def _rule(row: dict, c: dict) -> float:
+    v = _val(row, c["field"])
+    if v is None:
+        return 0.0
+    ok = v >= c["value"] if c["op"] == ">=" else v <= c["value"] if c["op"] == "<=" else v == c["value"]
+    return 1.0 if ok else 0.0
+
+
 def breakdown(row: dict, cfg: dict) -> dict:
-    """Points gagnés par critère ACTIVÉ uniquement."""
+    """Points gagnés par critère ACTIVÉ (intégrés + règles perso)."""
     f = _fractions(row)
-    return {k: round(cfg[k]["points"] * f[k], 1) for k in cfg if cfg[k]["enabled"]}
+    return {k: round(cfg[k]["points"] * (_rule(row, cfg[k]) if cfg[k].get("custom") else f[k]), 1)
+            for k in cfg if cfg[k]["enabled"]}
 
 
 def compute(row: dict, cfg: dict) -> int:

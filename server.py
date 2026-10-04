@@ -1,3 +1,5 @@
+import os, secrets, base64
+from fastapi import Request
 """
 server.py — FastAPI backend
 """
@@ -100,25 +102,64 @@ app.add_middleware(
 
 # ── API ───────────────────────────────────────────────────────────────────────
 
+class BasicAuth:
+    """Mot de passe (HTTP Basic) sur tout, sauf /api/health. Actif seulement si ADMIN_PASSWORD est défini."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        pw = os.getenv("ADMIN_PASSWORD")
+        if not pw or scope["type"] not in ("http", "websocket") or scope.get("path") == "/api/health":
+            return await self.app(scope, receive, send)
+        auth, ok = dict(scope["headers"]).get(b"authorization", b"").decode(), False
+        if auth.startswith("Basic "):
+            try:
+                ok = secrets.compare_digest(base64.b64decode(auth[6:]).decode().partition(":")[2], pw)
+            except Exception:
+                pass
+        if ok:
+            return await self.app(scope, receive, send)
+        if scope["type"] == "websocket":
+            await receive()
+            return await send({"type": "websocket.close", "code": 4401})
+        await send({"type": "http.response.start", "status": 401,
+                    "headers": [(b"www-authenticate", b'Basic realm="SideQuest"'), (b"content-length", b"0")]})
+        await send({"type": "http.response.body", "body": b""})
+
+
+app.add_middleware(BasicAuth)
+
+
+@app.get("/api/health")
+async def health():
+    return {"ok": True}
+
+
+@app.post("/api/games/{discord_id}/pin")
+async def pin_game(discord_id: str, body: dict):
+    await db.set_pinned(discord_id, bool(body.get("pinned", True)))
+    return {"ok": True}
+
+
+@app.patch("/api/games/{discord_id}/outreach")
+async def set_game_outreach(discord_id: str, body: dict):
+    await db.set_outreach(discord_id, body)
+    return {"ok": True}
+
+
+@app.get("/api/funnel")
+async def get_funnel():
+    return await db.funnel()
+
+
 @app.get("/api/stats")
 async def get_stats():
     return await db.get_stats()
 
 
 @app.get("/api/games")
-async def get_games(
-    status:   Optional[str] = None,
-    search:   Optional[str] = None,
-    sort:     str = "score",
-    page:     int = 1,
-    per_page: int = 50,
-    min_score:   int = 0,
-    has_contact: bool = False,
-):
-    return await db.get_games(
-        status=status, search=search, sort=sort, page=page, per_page=per_page,
-        min_score=min_score, has_contact=has_contact,
-    )
+async def list_games(request: Request):
+    return await db.get_games(dict(request.query_params))
 
 
 @app.get("/api/scans")
@@ -182,15 +223,23 @@ async def put_criteria(body: dict):
     return {"ok": True, "recomputed": await db.recompute_scores(), "criteria": cfg}
 
 
+@app.get("/api/scanner")
+async def get_scanner():
+    return await db.get_scanner_cfg()
+
+
+@app.put("/api/scanner")
+async def put_scanner(body: dict):
+    return await db.set_scanner_cfg(body)
+
+
 @app.get("/api/export.xlsx")
-async def export_xlsx(status: str = "dead,dying", min_score: int = 0, has_contact: bool = False):
-    valid = [x for x in status.split(",") if x in {"dead", "dying", "alive", "unknown"}] or ["dead"]
-    cfg  = await db.get_criteria()
-    rows = await db.export_rows(valid, min_score, has_contact)
-    data = build_xlsx(rows, cfg, valid)
+async def export_xlsx(request: Request):
+    qp = dict(request.query_params)
+    cfg, rows = await db.get_criteria(), await db.export_rows(qp)
+    data = build_xlsx(rows, cfg, (qp.get("status") or "dead,dying").split(","))
     name = f"leads-{datetime.utcnow():%Y%m%d-%H%M}.xlsx"
-    return Response(data, headers={
-        "Content-Disposition": f'attachment; filename="{name}"',
+    return Response(data, headers={"Content-Disposition": f'attachment; filename="{name}"',
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
 
 

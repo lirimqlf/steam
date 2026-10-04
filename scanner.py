@@ -56,13 +56,15 @@ class Scanner:
         self.dead_count = 0
         self.new_dead_count = 0
         self.started_at: Optional[str] = None
+        self.failed = 0
+        self.pending = []
 
     def get_status(self) -> dict:
         return {
             "is_running": self.is_running, "scan_id": self.scan_id,
             "progress": self.progress, "total": self.total,
             "current_game": self.current_game, "dead_count": self.dead_count,
-            "new_dead_count": self.new_dead_count, "started_at": self.started_at,
+            "new_dead_count": self.new_dead_count, "started_at": self.started_at, "failed": self.failed,
             "pct": round(self.progress / self.total * 100) if self.total else 0,
         }
 
@@ -134,13 +136,20 @@ class Scanner:
             return None
         name, did = game_raw.get("name", "Unknown"), game_raw.get("id", "")
         self.current_game = name
+        sc = self.sc
         k = self.known.get(did)
         if k:
-            if k["status"] == "ignored":
+            if k["status"] == "ignored" or k.get("pinned"):
                 return None
-            if k["status"] == "alive" and k["last_checked"] and (k["current_players"] or 0) > 20:
+            if k["status"] == "unknown" and k["last_checked"]:
                 try:
-                    if (_now() - datetime.fromisoformat(k["last_checked"]).replace(tzinfo=timezone.utc)).days < RECHECK_ALIVE_DAYS:
+                    if (_now() - datetime.fromisoformat(k["last_checked"]).replace(tzinfo=timezone.utc)).days < 30:
+                        return None
+                except ValueError:
+                    pass
+            if k["status"] == "alive" and k["last_checked"] and (k["current_players"] or 0) > 20 and (k["total_reviews"] is not None or not sc["fetch_reviews_all"]):
+                try:
+                    if (_now() - datetime.fromisoformat(k["last_checked"]).replace(tzinfo=timezone.utc)).days < sc["recheck_alive_days"]:
                         return None
                 except ValueError:
                     pass
@@ -150,20 +159,27 @@ class Scanner:
         async with steam_sem:
             players = await self._players(session, appid)
         if players is None:
+            self.failed += 1
             return None                                     # échec → on garde l'ancien état
         streak = (k["zero_streak"] or 0) + 1 if (players == 0 and k) else (1 if players == 0 else 0)
         base.update(current_players=players, zero_streak=streak)
 
-        if players > 0:                                     # vivant → fin, 1 seul appel utilisé
+        if players > sc["max_players"]:                                     # vivant → fin, 1 seul appel utilisé
+            if sc["fetch_reviews_all"]:
+                async with steam_sem:
+                    rv, lr = await self._reviews(session, appid)
+                if rv is not None:
+                    base.update(total_reviews=rv, last_review_ts=lr)
             await db.upsert_game({**base, "status": "alive", "score": 0})
             return "alive", False
 
         async with steam_sem:
             reviews, last_review = await self._reviews(session, appid)
         if reviews is None:
+            self.failed += 1
             return None
         base.update(total_reviews=reviews, last_review_ts=last_review)
-        if reviews > DYING_MAX_REVIEWS:
+        if reviews > sc["dying_max_reviews"]:
             await db.upsert_game({**base, "status": "alive", "score": 0})
             return "alive", False
 
@@ -171,6 +187,7 @@ class Scanner:
             info = await self._details(session, appid)
             await asyncio.sleep(1.6)
         if info is None:
+            self.failed += 1
             return None
         if not info:                                        # page retirée : rien à acheter
             await db.upsert_game({**base, "status": "unknown", "score": 0, "notes": "page retirée / indisponible"})
@@ -178,11 +195,16 @@ class Scanner:
         if info.get("type") != "game":
             await db.upsert_game({**base, "status": "ignored", "app_type": info.get("type"), "score": 0})
             return None
+        ex = [t.strip().lower() for t in sc["exclude_publishers"].split(",") if t.strip()]
+        who = " ".join((info.get("developers") or []) + (info.get("publishers") or [])).lower()
+        if any(t in who for t in ex):
+            await db.upsert_game({**base, "status": "unknown", "score": 0, "notes": "excluded publisher"})
+            return "unknown", False
         rel = info.get("release_date") or {}
         released = _parse_date(rel.get("date", "")) if not rel.get("coming_soon") else None
         age = (_now() - released).days if released else None
         async with steam_sem:
-            news_ts = await self._news_ts(session, appid)
+            news_ts = await self._news_ts(session, appid) if sc["use_news"] else None
         acts = [t for t in (last_review, news_ts) if t]
         inactive = _days_since(max(acts)) if acts else None
 
@@ -196,12 +218,12 @@ class Scanner:
         contact = email or url
         price = (info.get("price_overview") or {}).get("final")
         early = any(g.get("description") == "Early Access" for g in info.get("genres") or [])
-        old_enough = age is not None and age >= MIN_AGE_DAYS
-        quiet = inactive is None or inactive >= MIN_INACTIVE_DAYS
+        old_enough = (not sc["use_age"]) or age is None or age >= sc["min_age_days"]
+        quiet = (not sc["use_inactivity"]) or inactive is None or inactive >= sc["min_inactive_days"]
 
         if rel.get("coming_soon") or not old_enough:
             status = "alive"                                # pas sorti / trop récent → pas "mort"
-        elif reviews <= MAX_REVIEWS and quiet:
+        elif reviews <= sc["max_reviews"] and quiet and streak >= sc["min_zero_streak"]:
             status = "dead"
         elif quiet or (inactive is not None and inactive >= 180):
             status = "dying"
@@ -211,14 +233,14 @@ class Scanner:
                "release_date": rel.get("date"),
                "developers": ", ".join(info.get("developers") or []),
                "publishers": ", ".join(info.get("publishers") or []),
-               "contact": contact, "email": email, "website": url,
+               "contact": contact, "email": email, "website": url, "self_pub": int(bool(set(devs) & set(pubs))),
                "is_free": int(bool(info.get("is_free"))), "price": price, "early_access": int(early)}
         score = scoring.compute(rec, self.cfg) if status != "alive" else 0
         await db.upsert_game({**rec, "score": score})
         is_new = status == "dead" and (not k or k["status"] != "dead")
-        if is_new and notifier and score >= NOTIFY_MIN_SCORE:
-            await notifier.notify_new_dead(name=name, discord_id=did, steam_appid=appid, current_players=players,
-                                           total_reviews=reviews, inactive_days=inactive, score=score, contact=contact)
+        if is_new and notifier and score >= sc["notify_min_score"] and (contact or not sc["notify_require_contact"]):
+            self.pending.append(dict(name=name, discord_id=did, steam_appid=appid, current_players=players,
+                                     total_reviews=reviews, inactive_days=inactive, score=score, contact=contact))
         return status, is_new
 
     async def _process_game(self, session, game_raw, steam_sem, details_sem, notifier):
@@ -228,6 +250,7 @@ class Scanner:
             res = await self._evaluate(session, game_raw, steam_sem, details_sem, notifier)
         except Exception as e:
             print(f"[!] {game_raw.get('name')}: {e}")
+            self.failed += 1
             res = None
         self.progress += 1
         if res and res[0] == "dead":
@@ -241,6 +264,7 @@ class Scanner:
             return
         self.is_running, self._stop_flag = True, False
         self.progress = self.total = self.dead_count = self.new_dead_count = 0
+        self.failed, self.pending = 0, []
         self.started_at = datetime.utcnow().isoformat()
         self.current_game = ""
         self.scan_id = await db.create_scan()
@@ -248,10 +272,11 @@ class Scanner:
         try:
             async with db.get_db() as conn:
                 cur = await conn.execute(
-                    "SELECT discord_id, status, last_checked, current_players, zero_streak FROM games")
+                    "SELECT discord_id, status, last_checked, current_players, zero_streak, total_reviews, pinned FROM games")
                 self.known = {r["discord_id"]: dict(r) for r in await cur.fetchall()}
 
             self.cfg = await db.get_criteria()
+            self.sc = await db.get_scanner_cfg()
             async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=50)) as session:
                 self.current_game = "Fetching Discord games..."
                 await self._broadcast_progress()
@@ -272,8 +297,11 @@ class Scanner:
                                  new_dead=self.new_dead_count, status=finish)
             await self._broadcast({"type": "scan_complete", "scan_id": self.scan_id,
                                    "total_processed": self.progress, "total_dead": self.dead_count,
-                                   "new_dead": self.new_dead_count, "status": finish})
+                                   "new_dead": self.new_dead_count, "failed": self.failed, "status": finish})
             if notifier:
+                top = sorted(self.pending, key=lambda a: -a["score"])[:self.sc["notify_max_per_scan"]]
+                if top:
+                    await notifier.notify_batch(top)
                 await notifier.notify_scan_complete(total=self.progress, dead=self.dead_count,
                                                     new_dead=self.new_dead_count)
         except Exception as e:

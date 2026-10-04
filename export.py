@@ -18,7 +18,7 @@ def build_xlsx(rows: list, cfg: dict, statuses: list) -> bytes:
     on = [k for k in cfg if cfg[k]["enabled"]]
     head = ["Jeu", "Statut", "Score", "Joueurs", "Reviews", "Dernière review", "Dernière news",
             "Inactif (jours)", "Sortie", "Développeur", "Éditeur", "Email", "Site / support",
-            "Prix ($)", "Steam", "Discord"] + [f"pts · {scoring.LABELS[k]}" for k in on]
+            "Prix ($)", "Steam", "Discord"] + [f"pts · {cfg[k]['label']}" for k in on]
     ws.append(head)
     for r in rows:
         c = r.get("contact") or ""
